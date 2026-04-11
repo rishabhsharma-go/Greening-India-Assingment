@@ -1,0 +1,4 @@
+-- Seed data (optional). Prefer using `npm run seed` which is idempotent for the user.
+-- Test credentials:
+-- Email:    test@example.com
+-- Password: password123

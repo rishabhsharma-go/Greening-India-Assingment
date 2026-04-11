@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# build output
+backend/dist/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (do not commit secrets)
+.env
+backend/.env
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
