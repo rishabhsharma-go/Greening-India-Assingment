@@ -1,0 +1,13 @@
+# Production profile — active when SPRING_PROFILES_ACTIVE=prod
+
+logging:
+  level:
+    root: WARN
+    com.taskflow: INFO
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
