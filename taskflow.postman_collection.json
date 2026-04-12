@@ -1,0 +1,487 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3",
+		"name": "TaskFlow Elite - Premium API Suite",
+		"description": "**Enterprise-Grade API Suite** for TaskFlow Elite.\n\n### 🛡️ Secure Contexts\nThis collection is logically divided into **Perspectives**:\n- **01. Authentication**: Identity Manifestation.\n- **02. User Workspace**: Core Task management (Projects/Tasks).\n- **03. Admin Moderation**: Restricted analytical endpoints.\n\n### ⚡ Automatic Auth\nThe login request contains a script to sync your `bearer_token` automatically. No manual copy-pasting required.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "00. System Infrastructure",
+			"item": [
+				{
+					"name": "Health Heartbeat (Public)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Public infrastructure signal to verify API vitality without authentication."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "01. Auth & Identity",
+			"item": [
+				{
+					"name": "Register (New User)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ecologist Jane\",\n    \"email\": \"jane@taskflow.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registers a new standard user in the elite ecosystem."
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    pm.environment.set(\"bearer_token\", jsonData.token);",
+									"    console.log(\"✔ Bearer Token Synced Successfully\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticates an administrator and captures the Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Guardians Discovery (Lattice Registry)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Retrieves the full registry of synchronized nodes (guardians) from the ecosystem lattice."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. User Workspace",
+			"item": [
+				{
+					"name": "Projects",
+					"item": [
+						{
+							"name": "Create Project",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Reforestation Alpha\",\n    \"description\": \"Initial planting phase for the northern sector.\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/projects",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "List All Projects",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects?page=1&limit=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								},
+								"description": "Public transparency protocol: Everyone can see the list of environmental projects."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Specific Project",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "UUID-HERE"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Project Vitality Stats (Node Health)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects/:id/stats",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":id",
+										"stats"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Retrieves the real-time ecological vitality metrics for a specific project node."
+							},
+							"response": []
+						},
+						{
+							"name": "Recalibrate Project",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Restoration Omega\",\n    \"description\": \"Final quadrant planting cycle.\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/projects/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Updates project metadata. Restricted to the absolute Project Owner (Architect bypass enabled)."
+							},
+							"response": []
+						},
+						{
+							"name": "Deconstruct Project",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Permanent erasure of the project node and all associated task dependencies. Owner-locked."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Tasks",
+					"item": [
+						{
+							"name": "Lattice Tasks Discovery",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects/:projectId/tasks?status=in_progress&assignee=USER-UUID",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":projectId",
+										"tasks"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "in_progress",
+											"description": "Filter by enum: todo | in_progress | done"
+										},
+										{
+											"key": "assignee",
+											"value": "USER-UUID",
+											"description": "Filter by User UUID"
+										}
+									],
+									"variable": [
+										{
+											"key": "projectId",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Retrieves the task lattice for a project. Supports multi-dimensional filtering by status and assignee."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Task Bud",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"title\": \"Soil Quality Audit\",\n    \"description\": \"Initial analysis of planting site A.\",\n    \"priority\": \"high\",\n    \"dueDate\": \"2026-06-30\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/projects/:projectId/tasks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":projectId",
+										"tasks"
+									],
+									"variable": [
+										{
+											"key": "projectId",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Recalibrate Task",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"status\": \"in_progress\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/tasks/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "TASK-UUID-HERE"
+										}
+									]
+								},
+								"description": "Requires explicit ownership (Creator/Project Owner/Assignee) or Administrative bypass."
+							},
+							"response": []
+						},
+						{
+							"name": "Deconstruct Task",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tasks/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "TASK-UUID-HERE"
+										}
+									]
+								},
+								"description": "Removes a specific task node. Restricted to task creator or project architect."
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "03. Admin Moderation",
+			"item": [
+				{
+					"name": "System Health Pulse (Global Stats)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/projects/system/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"projects",
+								"system",
+								"stats"
+							]
+						},
+						"description": "Restricted Admin perspective for system-wide performance analytics."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{bearer_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "bearer_token",
+			"value": "PASTE-TOKEN-OR-LOGIN",
+			"type": "string"
+		}
+	]
+}
