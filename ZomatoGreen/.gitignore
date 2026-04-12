@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Rust build artifacts
+target/
+
+# Local IDE / tool config
+.claude/
+
+# Node
+frontend/node_modules/
+frontend/dist/
