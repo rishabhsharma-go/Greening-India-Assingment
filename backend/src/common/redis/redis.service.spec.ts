@@ -59,6 +59,11 @@ describe('RedisService', () => {
   describe('onModuleInit', () => {
     it('should initialize redis client', () => {
       expect(Redis).toHaveBeenCalled();
+      
+      const redisOptions = (Redis as unknown as jest.Mock).mock.calls[0][0];
+      expect(redisOptions.retryStrategy(1)).toBe(50);
+      expect(redisOptions.retryStrategy(100)).toBe(2000);
+
       expect(mockRedisClient.on).toHaveBeenCalledWith(
         'connect',
         expect.any(Function),
@@ -67,6 +72,21 @@ describe('RedisService', () => {
         'error',
         expect.any(Function),
       );
+    });
+
+    it('should log on connect', () => {
+      const connectHandler = mockRedisClient.on.mock.calls.find(c => c[0] === 'connect')[1];
+      const loggerSpy = jest.spyOn((service as any).logger, 'log');
+      connectHandler();
+      expect(loggerSpy).toHaveBeenCalledWith('Connected to Redis');
+    });
+
+    it('should log on error', () => {
+      const errorHandler = mockRedisClient.on.mock.calls.find(c => c[0] === 'error')[1];
+      const loggerSpy = jest.spyOn((service as any).logger, 'error');
+      const error = new Error('fail');
+      errorHandler(error);
+      expect(loggerSpy).toHaveBeenCalledWith('Redis error', error);
     });
   });
 

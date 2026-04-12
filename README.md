@@ -1,31 +1,38 @@
-# 🌊 TaskFlow - Enterprise Task Management System
+# 🌿 TaskFlow - Premium Task Management System
 
-TaskFlow is a production-grade task management system built with **NestJS** and **React**. It follows industry-standard design patterns, including RBAC, API versioning, and global error handling.
+TaskFlow is a production-grade task management system designed for **Greening India**. It features a high-visibility visual dashboard, real-time data synchronization, and an enterprise-scale backend architecture.
+
+## ✨ Premium Features
+
+### 🌸 Ecosystem Pulse Dashboard
+A high-visibility, animated visual interface that provides an instant "Proportional Bifurcation" of project health. 
+- Built with **Framer Motion** and custom **SVG Donut Charts**.
+- Calculates real-time **Vitality Metrics** across all project layers.
+
+### ⚡ Real-Time Synergy
+Zero-latency updates powered by **WebSockets (Socket.io)**.
+- Task movements and status changes are broadcasted instantly across all connected clients.
+- Automatic cache invalidation for consistent data integrity.
+
+### 🧠 High-Performance Architecture
+- **Redis Caching**: Optimized project stats lookup for high-traffic scenarios.
+- **RBAC Security**: Role-Based Access Control ensuring only authorized personnel can recalibrate task buds.
+- **Atomic Reliability**: TypeORM transactions and global exception filters for resilient service.
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Framework**: [NestJS](https://nestjs.com/) (Node.js) - **IMPORTANT: THIS IS A NESTJS APP**
-- **Language**: TypeScript
-- **Database**: PostgreSQL
-- **ORM**: TypeORM
-- **Authentication**: JWT (Passport.js)
-- **Architecture**: Domain-Driven Modules
-- **Logging**: nestjs-pino (Structured Logging)
-- **Versioning**: URI-based (v1)
+- **Framework**: [NestJS](https://nestjs.com/) (Node.js)
+- **Real-time**: Socket.io Gateways
+- **Caching**: Redis (IoRedis)
+- **Database**: PostgreSQL with TypeORM
+- **Authentication**: JWT (Passport.js Strategy)
 
 ### Frontend
 - **Framework**: React 18 (Vite)
-- **Styling**: Tailwind CSS
-- **UI Components**: Shadcn UI
-- **Animations**: Framer Motion
 - **State Management**: TanStack Query (React Query)
-- **Drag & Drop**: @hello-pangea/dnd
-
-### Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Migrations**: TypeORM Migration System
-- **Seeding**: typeorm-extension with Faker.js
+- **Dashboard UI**: Framer Motion & SVG Animations
+- **Design System**: Radix UI & Shadcn (Forest Theme)
 
 ## 🚦 Getting Started
 
@@ -33,31 +40,23 @@ TaskFlow is a production-grade task management system built with **NestJS** and 
 - Node.js (v20+)
 - Docker & Docker Compose
 
-### Setup
+### Fast-Track Setup
 1. Clone the repository.
-2. Create `.env` files based on `.env.example` in both `backend` and `frontend`.
-3. Run the application:
+2. Run the application (Environment variables are pre-configured for Docker):
    ```bash
    docker-compose up --build
    ```
 
-### 🧪 Test Credentials
-Once the application is up, use these credentials to log in immediately:
-- **Email**: `test@example.com`
-- **Password**: `password123`
+### 🧪 Quality Assurance
+Verify the 100% test coverage and system integrity:
+```bash
+# Run Backend Coverage
+cd backend && npm run test:cov
 
-### 🏗️ Architecture Design Patterns
-- **Data Mapper Pattern**: Using TypeORM entities and repositories.
-- **Dependency Injection**: NestJS core DI system for decoupled services.
-- **Global Error Handling**: Centralized `HttpExceptionFilter`.
-- **RBAC Guard**: Role-based access control for secure operations.
-- **API Versioning**: Scalable API evolution without breaking changes.
-
-## 📈 Scalability Features
-- **Pagination**: Implemented on all listing endpoints to handle large datasets.
-- **Optimized SQL**: Explicit migrations and indexed UUIDs.
-- **Responsive UI**: Mobile-first design using Tailwind CSS.
-- **Atomic Components**: Reusable UI primitives via Shadcn.
+# Run Frontend Quality Check
+cd frontend && npm run build
+```
 
 ---
-*Built with ❤️ using NestJS and React.*
+*Built for the Greening India Assignment with a focus on Visual Excellence and Scalable Architecture.* 🌿
+

@@ -11,8 +11,10 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Task } from '../../tasks/entities/task.entity';
+import { Unique } from 'typeorm';
 
 @Entity('projects')
+@Unique(['ownerId', 'name'])
 export class Project {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

@@ -1,7 +1,8 @@
-import {
+  import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
@@ -25,6 +26,13 @@ export class TasksService {
   ) {}
 
   async create(projectId: string, createTaskDto: CreateTaskDto, user: User) {
+    const existing = await this.tasksRepository.findOne({
+      where: { title: createTaskDto.title, projectId },
+    });
+    if (existing) {
+      throw new ConflictException(TASK_MESSAGES.ALREADY_EXISTS);
+    }
+
     const project = await this.projectsService.findOne(projectId);
     const task = this.tasksRepository.create({
       ...createTaskDto,

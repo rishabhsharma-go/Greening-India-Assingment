@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Unique } from 'typeorm';
 import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -24,6 +25,7 @@ export enum TaskPriority {
 }
 
 @Entity('tasks')
+@Unique(['projectId', 'title'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

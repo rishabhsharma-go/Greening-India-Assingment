@@ -3,6 +3,7 @@ import {
   ValidationPipe,
   VersioningType,
   Logger as NestLogger,
+  BadRequestException,
 } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
@@ -49,6 +50,16 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => {
+        const fields: Record<string, string> = {};
+        errors.forEach((err) => {
+          fields[err.property] = Object.values(err.constraints || {}).join(', ');
+        });
+        return new BadRequestException({
+          error: 'validation failed',
+          fields,
+        });
+      },
     }),
   );
 

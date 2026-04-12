@@ -42,6 +42,8 @@ describe('ProjectsController', () => {
     const user = { id: '1' } as User;
     await controller.findAll(user, 1, 10);
     expect(service.findAll).toHaveBeenCalledWith(user, 1, 10);
+    await controller.findAll(user);
+    expect(service.findAll).toHaveBeenCalledWith(user, 1, 10);
   });
 
   it('findOne()', async () => {

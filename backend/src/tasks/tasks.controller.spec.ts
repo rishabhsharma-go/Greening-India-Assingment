@@ -38,7 +38,9 @@ describe('TasksController', () => {
 
   it('findAll()', async () => {
     await controller.findAll('p1', undefined, undefined, 1, 10);
-    expect(service.findAll).toHaveBeenCalled();
+    expect(service.findAll).toHaveBeenCalledWith('p1', undefined, undefined, 1, 10);
+    await controller.findAll('p1');
+    expect(service.findAll).toHaveBeenCalledWith('p1', undefined, undefined, 1, 10);
   });
 
   it('update()', async () => {

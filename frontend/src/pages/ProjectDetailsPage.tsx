@@ -27,6 +27,71 @@ import type { Project, Task } from '@/types';
 import { TaskStatus, TaskPriority } from '@/types';
 import { AnimatePresence, motion } from 'framer-motion';
 
+const ProjectPulse = ({ todo, inProgress, done, vitality }: { todo: number, inProgress: number, done: number, vitality: number }) => {
+  const total = todo + inProgress + done;
+  if (total === 0) return null;
+
+  const segments = [
+    { value: done, color: '#10b981', label: 'Flowering' },
+    { value: inProgress, color: '#f59e0b', label: 'Sprouting' },
+    { value: todo, color: '#94a3b8', label: 'Seeds' }
+  ];
+
+  let cumulativeOffset = 0;
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+
+  return (
+    <div className="relative w-48 h-48 flex items-center justify-center group">
+      <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          fill="transparent"
+          stroke="#f1f5f9"
+          strokeWidth="8"
+        />
+        {segments.map((segment, i) => {
+          if (segment.value === 0) return null;
+          const percentage = (segment.value / total) * 100;
+          const offset = (cumulativeOffset / 100) * circumference;
+          cumulativeOffset += percentage;
+
+          return (
+            <motion.circle
+              key={i}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="transparent"
+              stroke={segment.color}
+              strokeWidth="10"
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: circumference - (percentage / 100) * circumference }}
+              transition={{ duration: 1.5, delay: 0.2, ease: "circOut" }}
+              style={{ strokeDashoffset: circumference - (percentage / 100) * circumference, rotate: (offset / circumference) * 360 }}
+              strokeLinecap="round"
+              className="drop-shadow-md"
+            />
+          );
+        })}
+      </svg>
+      <div className="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center justify-center text-center">
+        <motion.span 
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-4xl font-black text-slate-800 tracking-tighter"
+        >
+          {vitality}%
+        </motion.span>
+        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Vitality</span>
+      </div>
+    </div>
+  );
+};
+
 const ProjectDetailsPage = () => {
   const { id } = useParams();
   const queryClient = useQueryClient();
@@ -39,7 +104,8 @@ const ProjectDetailsPage = () => {
     description: '',
     priority: TaskPriority.MEDIUM,
     status: TaskStatus.TODO,
-    dueDate: ''
+    dueDate: '',
+    assigneeId: ''
   });
 
   useEffect(() => {
@@ -81,7 +147,6 @@ const ProjectDetailsPage = () => {
     enabled: !!id,
   });
 
-  // Mutations
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: Partial<Task>) => {
       const response = await api.post(`/projects/${id}/tasks`, newTask);
@@ -122,7 +187,7 @@ const ProjectDetailsPage = () => {
   });
 
   const resetForm = () => {
-    setTaskForm({ title: '', description: '', priority: TaskPriority.MEDIUM, status: TaskStatus.TODO, dueDate: '' });
+    setTaskForm({ title: '', description: '', priority: TaskPriority.MEDIUM, status: TaskStatus.TODO, dueDate: '', assigneeId: '' });
     setEditingTask(null);
   };
 
@@ -133,7 +198,8 @@ const ProjectDetailsPage = () => {
       description: task.description || '',
       priority: task.priority,
       status: task.status,
-      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+      assigneeId: task.assigneeId || ''
     });
     setIsTaskSheetOpen(true);
   };
@@ -182,132 +248,186 @@ const ProjectDetailsPage = () => {
   };
 
   return (
-    <div className="space-y-10 font-sans">
-      {/* Dynamic Sub-Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-             <Badge className="bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full border-none text-[10px] uppercase tracking-widest">Active Operations Layer</Badge>
-             {projectTasks.length > 0 && (
-               <div className="flex items-center gap-3 bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm">
-                 <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                   <div 
-                      className="h-full bg-primary transition-all duration-1000" 
-                      style={{ width: `${aggregateVitality}%` }} 
-                   />
-                 </div>
-                 <span className="text-[10px] font-black text-primary uppercase">
-                    Vitality: {aggregateVitality}%
-                 </span>
-               </div>
-             )}
-          </div>
-          <h1 className="text-5xl font-black text-slate-800 tracking-tighter leading-none">{actualProject?.name}</h1>
-          <p className="text-slate-400 font-medium max-w-2xl leading-relaxed">{actualProject?.description || "Strategic resource management for environmental restoration."}</p>
-          
-          {/* Analytics Overview */}
-          <div className="flex gap-4 pt-4">
-             <div className="bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100 min-w-[120px]">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Buds</p>
-                <p className="text-2xl font-black text-slate-800">{totalCount}</p>
-             </div>
-             <div className="bg-emerald-50 px-4 py-3 rounded-2xl border border-emerald-100 min-w-[120px]">
-                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Flowering</p>
-                <p className="text-2xl font-black text-emerald-700">{doneCount}</p>
-             </div>
-             <div className="bg-amber-50 px-4 py-3 rounded-2xl border border-amber-100 min-w-[120px]">
-                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Sprouting</p>
-                <p className="text-2xl font-black text-amber-700">{inProgressCount}</p>
-             </div>
-          </div>
-        </div>
+    <div className="space-y-12 font-sans pb-20">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden bg-white/40 backdrop-blur-xl rounded-[4rem] border border-white/60 p-10 lg:p-14 shadow-2xl shadow-emerald-900/5 group"
+      >
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none" />
+        
+        <div className="relative flex flex-col lg:flex-row gap-12 items-center">
+          <div className="flex-1 space-y-8 text-center lg:text-left">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+               <Badge className="bg-emerald-50 text-emerald-600 font-black px-4 py-1.5 rounded-full border-2 border-emerald-100/50 text-[10px] uppercase tracking-[0.2em]">Active Core Layer</Badge>
+               <span className="px-4 py-1.5 bg-white/50 text-slate-400 text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-200/50">
+                  {totalCount} Total Buds
+               </span>
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="text-6xl lg:text-8xl font-black text-slate-800 tracking-tighter leading-none group-hover:scale-[1.01] transition-transform duration-700">
+                {actualProject?.name.split(' ')[0]} <br/>
+                <span className="text-primary">{actualProject?.name.split(' ').slice(1).join(' ')}</span>
+              </h1>
+              <p className="text-slate-400 text-lg lg:text-xl font-medium max-w-2xl leading-relaxed mx-auto lg:mx-0">
+                {actualProject?.description || "Initializing environmental restoration protocols for enhanced biodiversity."}
+              </p>
+            </div>
 
-        <div className="flex items-center gap-3">
-            <Sheet open={isTaskSheetOpen} onOpenChange={(open) => {
-              setIsTaskSheetOpen(open);
-              if (!open) resetForm();
-            }}>
-              <SheetTrigger asChild>
-                <Button className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 shadow-xl shadow-primary/10 text-white font-black transition-all hover:-translate-y-1">
-                  <Plus className="mr-2 w-5 h-5" /> ADD MISSION TASK
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="sm:max-w-md border-none rounded-l-[3rem] px-8 bg-white shadow-2xl">
-                <SheetHeader className="space-y-6 pt-10">
-                  <div className="bg-emerald-50 w-20 h-20 rounded-3xl flex items-center justify-center mb-2">
-                    <Leaf className="w-10 h-10 text-primary" />
-                  </div>
-                  <div>
-                    <SheetTitle className="text-4xl font-black text-slate-800 tracking-tighter leading-none mb-2">
-                      {editingTask ? "Recalibrate Bud" : "Bud Initiation"}
-                    </SheetTitle>
-                    <SheetDescription className="text-lg font-medium text-slate-400">Define the growth parameters for this task bud.</SheetDescription>
-                  </div>
-                </SheetHeader>
-                <div className="space-y-8 py-10">
-                  <div className="space-y-3">
-                    <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Task Headline</Label>
-                    <Input 
-                      value={taskForm.title} 
-                      onChange={e => setTaskForm({...taskForm, title: e.target.value})}
-                      placeholder="e.g. Reforestation Phase 1"
-                      className="h-14 bg-slate-50 border-none rounded-2xl px-6 font-bold focus-visible:ring-primary/20 ring-offset-0"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Vitality Priority</Label>
-                      <Select value={taskForm.priority} onValueChange={(v: TaskPriority) => setTaskForm({...taskForm, priority: v})}>
-                        <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-none shadow-2xl">
-                          <SelectItem value={TaskPriority.LOW}>Low Decay</SelectItem>
-                          <SelectItem value={TaskPriority.MEDIUM}>Balanced</SelectItem>
-                          <SelectItem value={TaskPriority.HIGH} className="text-red-500 font-bold">Critical Growth</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Soil Slot</Label>
-                      <Select value={taskForm.status} onValueChange={(v: TaskStatus) => setTaskForm({...taskForm, status: v})}>
-                        <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-none shadow-2xl">
-                          <SelectItem value={TaskStatus.TODO}>Seeds</SelectItem>
-                          <SelectItem value={TaskStatus.IN_PROGRESS}>Sprouting</SelectItem>
-                          <SelectItem value={TaskStatus.DONE}>Flowering</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Harvest Deadline</Label>
-                    <Input type="date" value={taskForm.dueDate} onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})} className="h-14 bg-slate-50 border-none rounded-2xl px-6 font-bold" />
-                  </div>
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+               <Sheet open={isTaskSheetOpen} onOpenChange={(open) => {
+                 setIsTaskSheetOpen(open);
+                 if (!open) resetForm();
+               }}>
+                 <SheetTrigger asChild>
+                   <Button className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 text-white font-black transition-all hover:-translate-y-1 text-lg tracking-tight">
+                     <Plus className="mr-2 w-6 h-6" /> ADD MISSION TASK
+                   </Button>
+                 </SheetTrigger>
+                 <SheetContent className="sm:max-w-md border-none rounded-l-[3rem] px-8 bg-white shadow-2xl">
+                   <SheetHeader className="space-y-6 pt-10">
+                     <div className="bg-emerald-50 w-20 h-20 rounded-3xl flex items-center justify-center mb-2">
+                       <Leaf className="w-10 h-10 text-primary" />
+                     </div>
+                     <div>
+                       <SheetTitle className="text-4xl font-black text-slate-800 tracking-tighter leading-none mb-2">
+                         {editingTask ? "Recalibrate Bud" : "Bud Initiation"}
+                       </SheetTitle>
+                       <SheetDescription className="text-lg font-medium text-slate-400">Define the growth parameters for this task bud.</SheetDescription>
+                     </div>
+                   </SheetHeader>
+                   <div className="space-y-8 py-10 overflow-y-auto max-h-[70vh] pr-4">
+                     <div className="space-y-3">
+                       <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Task Headline</Label>
+                       <Input 
+                         value={taskForm.title} 
+                         onChange={e => setTaskForm({...taskForm, title: e.target.value})}
+                         placeholder="e.g. Reforestation Phase 1"
+                         className="h-14 bg-slate-50 border-none rounded-2xl px-6 font-bold"
+                       />
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-3">
+                         <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Vitality</Label>
+                         <Select value={taskForm.priority} onValueChange={(v: TaskPriority) => setTaskForm({...taskForm, priority: v})}>
+                           <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl font-bold">
+                             <SelectValue />
+                           </SelectTrigger>
+                           <SelectContent className="rounded-2xl border-none shadow-2xl">
+                             <SelectItem value={TaskPriority.LOW}>Low</SelectItem>
+                             <SelectItem value={TaskPriority.MEDIUM}>Medium</SelectItem>
+                             <SelectItem value={TaskPriority.HIGH} className="text-red-500 font-bold">High</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </div>
+                       <div className="space-y-3">
+                         <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">State</Label>
+                         <Select value={taskForm.status} onValueChange={(v: TaskStatus) => setTaskForm({...taskForm, status: v})}>
+                           <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl font-bold">
+                             <SelectValue />
+                           </SelectTrigger>
+                           <SelectContent className="rounded-2xl border-none shadow-2xl">
+                             <SelectItem value={TaskStatus.TODO}>Seeds</SelectItem>
+                             <SelectItem value={TaskStatus.IN_PROGRESS}>Sprouting</SelectItem>
+                             <SelectItem value={TaskStatus.DONE}>Flowering</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </div>
+                     </div>
+                     <div className="space-y-3">
+                        <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Harvest Date</Label>
+                        <Input 
+                          type="date"
+                          value={taskForm.dueDate} 
+                          onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})}
+                          className="h-14 bg-slate-50 border-none rounded-2xl px-6 font-bold"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label className="font-black text-slate-500 uppercase tracking-[0.15em] text-[10px] ml-1">Guardian (Assignee)</Label>
+                        <Select 
+                          value={taskForm.assigneeId || 'unassigned'} 
+                          onValueChange={(v) => setTaskForm({...taskForm, assigneeId: v === 'unassigned' ? '' : v})}
+                        >
+                          <SelectTrigger className="h-14 bg-slate-50 border-none rounded-2xl font-bold">
+                            <SelectValue placeholder="Assign a guardian" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-none shadow-2xl">
+                             <SelectItem value="unassigned">No Guardian</SelectItem>
+                             {actualProject?.owner && (
+                               <SelectItem value={actualProject.owner.id}>
+                                 {actualProject.owner.name} (Owner)
+                               </SelectItem>
+                             )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                   </div>
+                   <SheetFooter>
+                     <Button 
+                       className="w-full h-16 rounded-[1.5rem] text-xl font-black bg-primary mt-4" 
+                       onClick={() => editingTask ? updateTaskMutation.mutate({ taskId: editingTask.id, data: taskForm }) : createTaskMutation.mutate(taskForm)} 
+                       disabled={!taskForm.title}
+                     >
+                       {editingTask ? "APPLY CHANGES" : "INITIATE GROWTH"}
+                     </Button>
+                   </SheetFooter>
+                 </SheetContent>
+               </Sheet>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center gap-12 bg-white/60 backdrop-blur-md p-10 rounded-[3rem] shadow-inner shadow-slate-100 border border-white/80">
+            <ProjectPulse todo={todoCount} inProgress={inProgressCount} done={doneCount} vitality={aggregateVitality} />
+            
+            <div className="space-y-6 min-w-[180px]">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                  <span>🌸 Flowering</span>
+                  <span>{totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0}%</span>
                 </div>
-                <SheetFooter>
-                  <Button 
-                    className="w-full h-16 rounded-[1.5rem] text-xl font-black bg-primary hover:bg-primary/90 mt-4 transition-all" 
-                    onClick={() => {
-                      if (editingTask) {
-                        updateTaskMutation.mutate({ taskId: editingTask.id, data: taskForm });
-                      } else {
-                        createTaskMutation.mutate(taskForm);
-                      }
-                    }} 
-                    disabled={!taskForm.title || createTaskMutation.isPending || updateTaskMutation.isPending}
-                  >
-                    {createTaskMutation.isPending || updateTaskMutation.isPending ? <Loader2 className="animate-spin" /> : (editingTask ? "APPLY CHANGES" : "INITIATE GROWTH")}
-                  </Button>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
-        </div>
-      </div>
+                <div className="h-2 w-full bg-emerald-50 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalCount > 0 ? (doneCount / totalCount) * 100 : 0}%` }}
+                    className="h-full bg-emerald-500 rounded-full"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-amber-500">
+                  <span>🌿 Sprouting</span>
+                  <span>{totalCount > 0 ? Math.round((inProgressCount / totalCount) * 100) : 0}%</span>
+                </div>
+                <div className="h-2 w-full bg-amber-50 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalCount > 0 ? (inProgressCount / totalCount) * 100 : 0}%` }}
+                    className="h-full bg-amber-400 rounded-full"
+                  />
+                </div>
+              </div>
 
-      {/* Kanban Environment */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>🌱 Seeds</span>
+                  <span>{totalCount > 0 ? Math.round((todoCount / totalCount) * 100) : 0}%</span>
+                </div>
+                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalCount > 0 ? (todoCount / totalCount) * 100 : 0}%` }}
+                    className="h-full bg-slate-400 rounded-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 min-h-[700px]">
           {Object.entries(columns).map(([colId, tasks]) => (
@@ -374,7 +494,7 @@ const ProjectDetailsPage = () => {
                                             }
                                           }}
                                           className="text-slate-400 hover:text-red-500 transition-colors p-1"
-                                       >
+                                        >
                                           <Trash2 size={16} />
                                        </button>
                                      </div>

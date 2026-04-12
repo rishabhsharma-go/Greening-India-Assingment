@@ -27,6 +27,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { message: (exception as Error).message || 'Internal server error' };
 
+    // If it's a custom validation response from our ValidationPipe, return it directly
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      (message as any).error === 'validation failed'
+    ) {
+      return response.status(status).json(message);
+    }
+
     const errorResponse = {
       success: false,
       statusCode: status,

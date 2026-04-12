@@ -86,6 +86,7 @@ describe('AuthService', () => {
       expect(result).toEqual({ token: 'token', user });
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: user.id,
+        user_id: user.id,
         email: user.email,
         role: user.role,
       });
@@ -119,7 +120,12 @@ describe('AuthService', () => {
         },
       });
       expect(bcrypt.hash).toHaveBeenCalledWith('pass', 12);
-      expect(jwtService.signAsync).toHaveBeenCalled();
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        sub: '1',
+        user_id: '1',
+        email: 'test@test.com',
+        role: UserRole.USER,
+      });
     });
   });
 });

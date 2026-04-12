@@ -2,6 +2,7 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -26,6 +27,13 @@ export class ProjectsService {
   ) {}
 
   async create(createProjectDto: CreateProjectDto, user: User) {
+    const existing = await this.projectsRepository.findOne({
+      where: { name: createProjectDto.name, ownerId: user.id },
+    });
+    if (existing) {
+      throw new ConflictException(PROJECT_MESSAGES.ALREADY_EXISTS);
+    }
+
     const project = this.projectsRepository.create({
       ...createProjectDto,
       ownerId: user.id,
@@ -52,10 +60,13 @@ export class ProjectsService {
     }
 
     const [data, total] = await this.projectsRepository.findAndCount({
-      where: { owner: { id: user.id } },
+      where: [
+        { ownerId: user.id },
+        { tasks: { assigneeId: user.id } }
+      ],
+      order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,
-      order: { createdAt: 'DESC' },
     });
 
     const result = {
@@ -75,7 +86,7 @@ export class ProjectsService {
   async findOne(id: string) {
     const project = await this.projectsRepository.findOne({
       where: { id },
-      relations: ['tasks', 'tasks.assignee'],
+      relations: ['owner', 'tasks', 'tasks.assignee'],
     });
     if (!project) {
       throw new NotFoundException(PROJECT_MESSAGES.NOT_FOUND);

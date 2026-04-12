@@ -26,6 +26,7 @@ export interface Project {
   name: string;
   description?: string;
   ownerId: string;
+  owner?: User;
   createdAt: string;
   tasks?: Task[];
 }
