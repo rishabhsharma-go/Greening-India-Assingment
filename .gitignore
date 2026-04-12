@@ -1,0 +1,31 @@
+# ── Secrets / Environment ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example          # keep the example template (no real secrets in it)
+
+# ── Frontend ──────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# ── Backend ───────────────────────────────────────────────────────────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.log
+
+# ── Java / IDE ────────────────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+.idea/
+*.iml
+.DS_Store
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
