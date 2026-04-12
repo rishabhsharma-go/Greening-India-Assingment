@@ -5,13 +5,6 @@ DECLARE
   v_user_id  UUID;
   v_proj_id  UUID := '20000000-0000-0000-0000-000000000001';
 BEGIN
-  -- Species seed data
-  INSERT INTO species (id, name, wood_density_rho, agb_coefficient_a, agb_coefficient_b) VALUES
-    ('10000000-0000-0000-0000-000000000001', 'Bamboo',       0.6000, 0.1291, 2.4450),
-    ('10000000-0000-0000-0000-000000000002', 'Seabuckthorn', 0.8200, 0.0899, 2.5600),
-    ('10000000-0000-0000-0000-000000000003', 'Teak',         0.6300, 0.0824, 2.6710)
-  ON CONFLICT (name) DO NOTHING;
-
   -- Project + task seed (requires test user to exist — created by gateway on first boot)
   SELECT id INTO v_user_id FROM users WHERE email = 'test@example.com';
 

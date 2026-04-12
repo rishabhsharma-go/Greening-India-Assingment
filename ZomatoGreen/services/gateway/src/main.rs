@@ -51,15 +51,6 @@ async fn main() -> anyhow::Result<()> {
     let management_url = std::env::var("MANAGEMENT_SERVICE_URL")
         .unwrap_or_else(|_| "http://management:8001".to_string());
 
-    let geospatial_url = std::env::var("GEOSPATIAL_SERVICE_URL")
-        .unwrap_or_else(|_| "http://geospatial:8002".to_string());
-
-    let telemetry_url = std::env::var("TELEMETRY_SERVICE_URL")
-        .unwrap_or_else(|_| "http://telemetry:8003".to_string());
-
-    let carbon_url = std::env::var("CARBON_SERVICE_URL")
-        .unwrap_or_else(|_| "http://carbon:8004".to_string());
-
     // -------------------------------------------------------------------------
     // 4. Connect to PostgreSQL
     // -------------------------------------------------------------------------
@@ -84,9 +75,6 @@ async fn main() -> anyhow::Result<()> {
         jwt_secret,
         client,
         management_url,
-        geospatial_url,
-        telemetry_url,
-        carbon_url,
     });
 
     // -------------------------------------------------------------------------
@@ -145,33 +133,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/users/*path", get(proxy::management_handler))
         .route("/users/*path", patch(proxy::management_handler))
         .route("/users/*path", delete(proxy::management_handler))
-        // Geospatial proxy
-        .route("/parcels", post(proxy::geospatial_handler))
-        .route("/parcels", get(proxy::geospatial_handler))
-        .route("/parcels/*path", get(proxy::geospatial_handler))
-        .route("/parcels/*path", post(proxy::geospatial_handler))
-        .route("/parcels/*path", patch(proxy::geospatial_handler))
-        .route("/parcels/*path", delete(proxy::geospatial_handler))
-        .route("/trees", post(proxy::geospatial_handler))
-        .route("/trees", get(proxy::geospatial_handler))
-        .route("/trees/*path", get(proxy::geospatial_handler))
-        .route("/trees/*path", post(proxy::geospatial_handler))
-        .route("/trees/*path", patch(proxy::geospatial_handler))
-        .route("/trees/*path", delete(proxy::geospatial_handler))
-        // Telemetry proxy
-        .route("/telemetry", post(proxy::telemetry_handler))
-        .route("/telemetry", get(proxy::telemetry_handler))
-        .route("/telemetry/*path", get(proxy::telemetry_handler))
-        .route("/telemetry/*path", post(proxy::telemetry_handler))
-        .route("/telemetry/*path", patch(proxy::telemetry_handler))
-        .route("/telemetry/*path", delete(proxy::telemetry_handler))
-        // Carbon / audit proxy
-        .route("/audits", post(proxy::carbon_handler))
-        .route("/audits", get(proxy::carbon_handler))
-        .route("/audits/*path", get(proxy::carbon_handler))
-        .route("/audits/*path", post(proxy::carbon_handler))
-        .route("/audits/*path", patch(proxy::carbon_handler))
-        .route("/audits/*path", delete(proxy::carbon_handler))
         .layer(auth_layer);
 
     let app = Router::new()

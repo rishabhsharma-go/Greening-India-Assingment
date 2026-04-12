@@ -9,10 +9,4 @@ pub struct AppState {
     pub client: reqwest::Client,
     /// Base URL of the Management microservice.
     pub management_url: String,
-    /// Base URL of the Geospatial microservice.
-    pub geospatial_url: String,
-    /// Base URL of the Telemetry microservice.
-    pub telemetry_url: String,
-    /// Base URL of the Carbon microservice.
-    pub carbon_url: String,
 }

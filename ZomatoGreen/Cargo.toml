@@ -2,9 +2,6 @@
 members = [
     "services/gateway",
     "services/management",
-    "services/geospatial",
-    "services/telemetry",
-    "services/carbon",
 ]
 resolver = "2"
 
