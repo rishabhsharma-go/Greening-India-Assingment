@@ -13,7 +13,7 @@ TaskFlow lets users register, log in, create projects, add tasks, and assign the
 |---|---|
 | Backend | Java 21 + Spring Boot 3.2, Spring Security, Flyway, JJWT |
 | Database | PostgreSQL 16 |
-| Frontend | React 18 + TypeScript, Material UI v5, React Router v6, Axios |
+| Frontend | React 19 + TypeScript, Material UI v5, React Router v7, Axios |
 | Infrastructure | Docker Compose, multi-stage Dockerfiles |
 | Backend deploy | Railway |
 | Frontend deploy | Netlify |
@@ -56,6 +56,7 @@ docker compose up --build
 - **Frontend:** http://localhost:3000  
 - **API:** http://localhost:8080  
 - **DB:** localhost:5432 (taskflow / taskflow_password)
+- **Swagger UI:** http://localhost:8080/swagger-ui.html
 
 ---
 
@@ -118,14 +119,11 @@ Password: password123
 ## 7. Deploying
 
 ### Backend → Railway
-1. Add PostgreSQL plugin in Railway
-2. Add service from `/backend` (auto-detects Maven/Dockerfile)
-3. Set env vars: `JWT_SECRET`, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `CORS_ALLOWED_ORIGINS=https://your-app.netlify.app`, `SPRING_PROFILES_ACTIVE=prod`
+- **API:** https://taskflow-production-a223.up.railway.app
+- **Swagger UI:** disabled in prod (`application-prod.yml`)
 
 ### Frontend → Netlify
-1. Base dir: `frontend` | Build: `npm run build` | Publish: `dist`
-2. Set `VITE_API_URL=https://your-api.up.railway.app`
-3. SPA routing handled by `public/_redirects`
+- **App:** https://taskflow-frontend-app.netlify.app
 
 ---
 
