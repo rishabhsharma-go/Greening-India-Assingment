@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { User } from '../../users/entities/user.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { Task } from '../../tasks/entities/task.entity';
+import { Role } from '../../users/entities/role.entity';
 import * as path from 'path';
 
 config({ path: path.resolve(process.cwd(), '.env') });
@@ -15,7 +16,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'password',
   database: process.env.DB_NAME || 'taskflow',
-  entities: [User, Project, Task],
+  entities: [User, Project, Task, Role],
   migrations: ['dist/migrations/*.js'],
   synchronize: false,
   logging: true,

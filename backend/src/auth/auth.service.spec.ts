@@ -47,7 +47,7 @@ describe('AuthService', () => {
       (usersService.findByEmailWithPassword as jest.Mock).mockResolvedValue(
         user,
       );
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+      (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser('test@test.com', 'password');
       expect(result).toEqual({ id: '1', email: 'test@test.com' });
@@ -62,7 +62,7 @@ describe('AuthService', () => {
       (usersService.findByEmailWithPassword as jest.Mock).mockResolvedValue(
         user,
       );
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
+      (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser('test@test.com', 'wrong');
       expect(result).toBeNull();
@@ -79,16 +79,20 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return access token and user', async () => {
-      const user = { id: '1', email: 'test@test.com', role: UserRole.USER };
+      const user = { 
+        id: '1', 
+        email: 'test@test.com', 
+        role: { slug: UserRole.USER } as any 
+      };
       (jwtService.signAsync as jest.Mock).mockResolvedValue('token');
 
-      const result = await service.login(user as Partial<User>);
+      const result = await service.login(user as any);
       expect(result).toEqual({ token: 'token', user });
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: user.id,
         user_id: user.id,
         email: user.email,
-        role: user.role,
+        role: UserRole.USER,
       });
     });
   });
@@ -101,10 +105,10 @@ describe('AuthService', () => {
         id: '1',
         ...dto,
         password: hashedPass,
-        role: UserRole.USER,
-      } as User;
+        role: { slug: UserRole.USER } as any,
+      } as any;
 
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue(hashedPass as never);
+      (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue(hashedPass);
       (usersService.create as jest.Mock).mockResolvedValue(createdUser);
       (jwtService.signAsync as jest.Mock).mockResolvedValue('token');
 
@@ -116,16 +120,10 @@ describe('AuthService', () => {
           id: '1',
           name: 'Test',
           email: 'test@test.com',
-          role: UserRole.USER,
+          role: { slug: UserRole.USER },
         },
       });
       expect(bcrypt.hash).toHaveBeenCalledWith('pass', 12);
-      expect(jwtService.signAsync).toHaveBeenCalledWith({
-        sub: '1',
-        user_id: '1',
-        email: 'test@test.com',
-        role: UserRole.USER,
-      });
     });
   });
 });

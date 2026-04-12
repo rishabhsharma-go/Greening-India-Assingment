@@ -12,34 +12,35 @@ export default class TaskSeeder implements Seeder {
     const userRepository = dataSource.getRepository(User);
 
     const admin = await userRepository.findOneBy({ email: 'test@example.com' });
-    const projects = await projectRepository.find();
+    const ecologist = await userRepository.findOneBy({ email: 'user@taskflow.com' });
+    const allProjects = await projectRepository.find();
 
-    if (!admin || projects.length === 0) return;
+    if (!admin || !ecologist || allProjects.length === 0) {
+      console.error('Core entities missing for task seeding.');
+      return;
+    }
 
-    process.stdout.write('Cultivating Tasks with Precision Vitality mix...\n');
+    process.stdout.write('Cultivating Tasks across the Project Ecosystem...\n');
 
-    for (const project of projects) {
+    const participants = [admin, ecologist];
+
+    for (const project of allProjects) {
       for (let j = 0; j < 4; j++) {
-        const action = faker.helpers.arrayElement([
-          'Analyze',
-          'Setup',
-          'Launch',
-          'Monitor',
-          'Audit',
-        ]);
-
-        const statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE, TaskStatus.TODO];
-        const status = statuses[j];
+        const creator = faker.helpers.arrayElement(participants);
+        const assignee = faker.helpers.arrayElement(participants);
+        
+        const action = faker.helpers.arrayElement(['Analyze', 'Setup', 'Launch', 'Monitor', 'Audit']);
+        const status = faker.helpers.arrayElement(Object.values(TaskStatus));
 
         await taskRepository.save(
           taskRepository.create({
             title: `${action} ${faker.word.noun()} protocol`,
-            description: `Detailed task for the project ecosystem.`,
+            description: `Detailed task for the project ecosystem: ${faker.company.catchPhrase()}`,
             status: status,
             priority: faker.helpers.arrayElement(Object.values(TaskPriority)),
-            project: project,
-            creator: admin,
-            assignee: admin,
+            projectId: project.id,
+            creatorId: creator.id,
+            assigneeId: assignee.id,
             dueDate: faker.date.future().toISOString().split('T')[0],
           }),
         );

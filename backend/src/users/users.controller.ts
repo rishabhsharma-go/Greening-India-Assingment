@@ -25,4 +25,11 @@ export class UsersController {
   findOne(@Param('email') email: string) {
     return this.usersService.findByEmail(email);
   }
+
+  @Get()
+  @ApiOperation({ summary: SWAGGER_MESSAGES.USERS.FIND_ALL })
+  @ApiResponse({ status: 200, description: USER_MESSAGES.FOUND })
+  findAll() {
+    return this.usersService.findAll();
+  }
 }

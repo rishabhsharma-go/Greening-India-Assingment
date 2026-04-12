@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectsController } from './projects.controller';
-import { ProjectsService } from './projects.service';
-import { User } from '../users/entities/user.entity';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { ProjectsService } from '../../services/core/projects.service';
+import { User } from '../../../users/entities/user.entity';
+import { CreateProjectDto } from '../../dto/create-project.dto';
+import { UpdateProjectDto } from '../../dto/update-project.dto';
+
+import { DataSource } from 'typeorm';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -21,7 +23,13 @@ describe('ProjectsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProjectsController],
-      providers: [{ provide: ProjectsService, useValue: service }],
+      providers: [
+        { provide: ProjectsService, useValue: service },
+        {
+          provide: DataSource,
+          useValue: { getRepository: jest.fn() },
+        },
+      ],
     }).compile();
 
     controller = module.get<ProjectsController>(ProjectsController);
@@ -39,11 +47,10 @@ describe('ProjectsController', () => {
   });
 
   it('findAll()', async () => {
-    const user = { id: '1' } as User;
-    await controller.findAll(user, 1, 10);
-    expect(service.findAll).toHaveBeenCalledWith(user, 1, 10);
-    await controller.findAll(user);
-    expect(service.findAll).toHaveBeenCalledWith(user, 1, 10);
+    await controller.findAll(1, 10);
+    expect(service.findAll).toHaveBeenCalledWith(1, 10);
+    await controller.findAll();
+    expect(service.findAll).toHaveBeenCalledWith(1, 10);
   });
 
   it('findOne()', async () => {

@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    // If backend uses the TransformInterceptor, unwrap the data
+    // backend uses the TransformInterceptor, unwrap the data
     if (response.data && response.data.success === true && response.data.data !== undefined) {
       return {
         ...response,

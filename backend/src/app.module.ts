@@ -8,9 +8,12 @@ import { TasksModule } from './tasks/tasks.module';
 import { User } from './users/entities/user.entity';
 import { Project } from './projects/entities/project.entity';
 import { Task } from './tasks/entities/task.entity';
+import { Role } from './users/entities/role.entity';
 import { AuthModule } from './auth/auth.module';
 import { RedisModule } from './common/redis/redis.module';
 import { EventsModule } from './common/events/events.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -36,7 +39,7 @@ import { EventsModule } from './common/events/events.module';
         username: configService.get<string>('DB_USER', 'postgres'),
         password: configService.get<string>('DB_PASSWORD', 'password'),
         database: configService.get<string>('DB_NAME', 'taskflow'),
-        entities: [User, Project, Task],
+        entities: [User, Project, Task, Role],
         migrations: [__dirname + '/migrations/*.{ts,js}'],
         migrationsRun: true,
         synchronize: false,
@@ -49,5 +52,7 @@ import { EventsModule } from './common/events/events.module';
     RedisModule,
     EventsModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

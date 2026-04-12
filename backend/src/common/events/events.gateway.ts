@@ -7,6 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
+import { ProjectStats } from '../../projects/interfaces/project-stats.interface';
 
 @WebSocketGateway({
   cors: {
@@ -41,7 +42,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(`project_${projectId}`).emit('taskUpdated', data);
   }
 
-  emitStatsUpdate(projectId: string, stats: any) {
+  emitStatsUpdate(projectId: string, stats: ProjectStats | { id: string; deleted: boolean }) {
     this.server.to(`project_${projectId}`).emit('statsUpdated', stats);
   }
 }

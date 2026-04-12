@@ -64,12 +64,12 @@ describe('EventsGateway', () => {
   });
 
   it('should emit stats update', () => {
-    gateway.emitStatsUpdate('proj-1', { stats: 'data' });
+    (mockServer.emit as jest.Mock).mockClear();
+    const stats = { statsByStatus: [], statsByAssignee: [] };
+    gateway.emitStatsUpdate('proj-1', stats);
     const toMock = (mockServer as unknown as { to: jest.Mock }).to;
     const emitMock = (mockServer as unknown as { emit: jest.Mock }).emit;
     expect(toMock).toHaveBeenCalledWith('project_proj-1');
-    expect(emitMock).toHaveBeenCalledWith('statsUpdated', {
-      stats: 'data',
-    });
+    expect(emitMock).toHaveBeenCalledWith('statsUpdated', stats);
   });
 });

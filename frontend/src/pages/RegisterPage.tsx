@@ -13,7 +13,7 @@ const RegisterPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, loading } = useAuth();
+  const { loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -24,9 +24,12 @@ const RegisterPage = () => {
       const registerData = response.data?.data || response.data;
       const { token, user: userData } = registerData || {};
       
-      if (token) {
-        login(token, userData);
-        navigate('/');
+      if (token || userData) {
+        toast({
+          title: "Guardian Registered",
+          description: "Your ecological identity has been manifested. Please synchronize your core to begin (Login).",
+        });
+        navigate('/login');
       } else {
         console.error('Core Protocol Failure: Token missing in response', response.data);
         toast({

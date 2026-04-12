@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectsService } from './projects.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Project } from './entities/project.entity';
-import { RedisService } from '../common/redis/redis.service';
-import { EventsGateway } from '../common/events/events.gateway';
-
-import { User } from '../users/entities/user.entity';
+import { Project } from '../../entities/project.entity';
+import { RedisService } from '../../../common/redis/redis.service';
+import { EventsGateway } from '../../../common/events/events.gateway';
+import { User } from '../../../users/entities/user.entity';
 
 describe('ProjectsService Edge Cases', () => {
   let service: ProjectsService;
@@ -59,7 +58,7 @@ describe('ProjectsService Edge Cases', () => {
     it('should handle page 0 by adjusting offset (logic check)', async () => {
       mockRepo.findAndCount.mockResolvedValue([[], 0]);
       mockRedisService.get.mockResolvedValue(null);
-      await service.findAll(mockUser, 0, 10);
+      await service.findAll(0, 10);
       expect(mockRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
           skip: expect.any(Number) as number,
@@ -70,7 +69,6 @@ describe('ProjectsService Edge Cases', () => {
 
   describe('getStats edge cases', () => {
     it('should return empty stats for project with no tasks', async () => {
-      mockRepo.findOne.mockResolvedValue({ id: '1' });
       mockRedisService.get.mockResolvedValue(null);
       const qb = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -88,7 +86,6 @@ describe('ProjectsService Edge Cases', () => {
     });
 
     it('should handle unassigned tasks (null assignee) in stats', async () => {
-      mockRepo.findOne.mockResolvedValue({ id: '1' });
       mockRedisService.get.mockResolvedValue(null);
       const qb = {
         leftJoin: jest.fn().mockReturnThis(),

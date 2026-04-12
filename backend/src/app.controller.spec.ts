@@ -15,8 +15,10 @@ describe('AppController', () => {
   });
 
   describe('health', () => {
-    it('should return "Backend is running!"', () => {
-      expect(appController.getHealth()).toBe('Backend is running!');
+    it('should return system vitality status', () => {
+      const health = appController.getHealth();
+      expect(health.status).toBe('UP');
+      expect(health.ecosystem).toBe('TaskFlow Elite');
     });
   });
 });

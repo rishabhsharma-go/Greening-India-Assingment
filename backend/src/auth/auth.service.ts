@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
+import { Role } from '../users/entities/role.entity';
 import { RegisterDto } from './dto/auth.dto';
 
 @Injectable()
@@ -23,16 +24,20 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    const result = { ...user };
-    delete (result as { password?: string }).password;
+    const userResult = { 
+      ...user,
+      role: user.role.slug,
+    };
+    delete (userResult as { password?: string }).password;
+    
     const token = await this.jwtService.signAsync({
       sub: user.id,
       user_id: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role.slug,
     });
 
-    return { token, user: result };
+    return { token, user: userResult };
   }
 
   async validateUser(
@@ -49,13 +54,21 @@ export class AuthService {
   }
 
   async login(user: Partial<User>) {
+    const roleSlug = (user.role as Role)?.slug || 'user';
+    
     const token = await this.jwtService.signAsync({
       sub: user.id,
       user_id: user.id,
       email: user.email,
-      role: user.role,
+      role: roleSlug,
     });
 
-    return { token, user };
+    return { 
+      token, 
+      user: {
+        ...user,
+        role: roleSlug,
+      } 
+    };
   }
 }

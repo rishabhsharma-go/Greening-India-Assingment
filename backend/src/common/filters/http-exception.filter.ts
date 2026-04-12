@@ -17,21 +17,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
+    let status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
+    let message =
       exception instanceof HttpException
         ? exception.getResponse()
         : { message: (exception as Error).message || 'Internal server error' };
 
-    // If it's a custom validation response from our ValidationPipe, return it directly
+    if ((exception as any)?.code === '23505') {
+      status = HttpStatus.BAD_REQUEST;
+      message = {
+        error: 'Bad Request',
+        message: 'A duplicate record already exists (Unique constraint violation).',
+      };
+    }
+
     if (
       typeof message === 'object' &&
       message !== null &&
-      (message as any).error === 'validation failed'
+      (message as Record<string, unknown>).error === 'validation failed'
     ) {
       return response.status(status).json(message);
     }

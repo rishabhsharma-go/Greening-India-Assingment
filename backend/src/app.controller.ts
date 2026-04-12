@@ -1,12 +1,18 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Public } from './common/decorators/public.decorator';
 
-@Controller()
+@ApiTags('System')
+@Controller({ path: 'health', version: '1' })
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
-  @Get('health')
-  getHealth(): string {
-    return this.appService.getHealth();
+  @Get()
+  @Public()
+  @ApiOperation({ summary: 'System health check (Public)' })
+  getHealth() {
+    return {
+      status: 'UP',
+      timestamp: new Date().toISOString(),
+      ecosystem: 'TaskFlow Elite',
+    };
   }
 }

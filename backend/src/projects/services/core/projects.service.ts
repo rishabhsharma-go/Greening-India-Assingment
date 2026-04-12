@@ -1,29 +1,30 @@
 import {
   Injectable,
-  ForbiddenException,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Project } from './entities/project.entity';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
-import { PROJECT_MESSAGES } from './constants/project-messages';
-import { User } from '../users/entities/user.entity';
-import { ProjectStats } from './interfaces/project-stats.interface';
-import { EventsGateway } from '../common/events/events.gateway';
-import { RedisService } from '../common/redis/redis.service';
+import { Project } from '../../entities/project.entity';
+import { CreateProjectDto } from '../../dto/create-project.dto';
+import { UpdateProjectDto } from '../../dto/update-project.dto';
+import { PROJECT_MESSAGES } from '../../constants/project-messages';
+import { User } from '../../../users/entities/user.entity';
+import { UserRole } from '../../../users/enums/user-role.enum';
+import { ProjectStats } from '../../interfaces/project-stats.interface';
+import { EventsGateway } from '../../../common/events/events.gateway';
+import { RedisService } from '../../../common/redis/redis.service';
 
 @Injectable()
 export class ProjectsService {
-  private readonly CACHE_PREFIX = 'projects:';
+  protected readonly CACHE_PREFIX = 'projects:';
 
   constructor(
     @InjectRepository(Project)
-    private projectsRepository: Repository<Project>,
-    private redisService: RedisService,
-    private eventsGateway: EventsGateway,
+    protected readonly projectsRepository: Repository<Project>,
+    protected readonly redisService: RedisService,
+    protected readonly eventsGateway: EventsGateway,
   ) {}
 
   async create(createProjectDto: CreateProjectDto, user: User) {
@@ -39,31 +40,20 @@ export class ProjectsService {
       ownerId: user.id,
     });
     const savedProject = await this.projectsRepository.save(project);
-    await this.clearUserCache(user.id);
+    await this.clearGlobalCache();
     return savedProject;
   }
 
-  async findAll(user: User, page: number = 1, limit: number = 10) {
-    const cacheKey = `${this.CACHE_PREFIX}list:${user.id}:${page}:${limit}`;
+  async findAll(page: number = 1, limit: number = 10) {
+    const cacheKey = `${this.CACHE_PREFIX}list:global:${page}:${limit}`;
     const cachedData = await this.redisService.get(cacheKey);
 
     if (cachedData) {
-      return JSON.parse(cachedData) as {
-        data: Project[];
-        meta: {
-          total: number;
-          page: number;
-          limit: number;
-          lastPage: number;
-        };
-      };
+      return JSON.parse(cachedData);
     }
 
     const [data, total] = await this.projectsRepository.findAndCount({
-      where: [
-        { ownerId: user.id },
-        { tasks: { assigneeId: user.id } }
-      ],
+      relations: ['owner'],
       order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,
@@ -101,7 +91,7 @@ export class ProjectsService {
     }
     Object.assign(project, updateProjectDto);
     const updated = await this.projectsRepository.save(project);
-    await this.clearUserCache(user.id);
+    await this.clearGlobalCache();
     await this.redisService.del(`${this.CACHE_PREFIX}stats:${id}`);
     const stats = await this.getStats(id);
     this.eventsGateway.emitStatsUpdate(id, stats);
@@ -114,7 +104,7 @@ export class ProjectsService {
       throw new ForbiddenException(PROJECT_MESSAGES.FORBIDDEN_DELETE);
     }
     await this.projectsRepository.softDelete(id);
-    await this.clearUserCache(user.id);
+    await this.clearGlobalCache();
     await this.redisService.del(`${this.CACHE_PREFIX}stats:${id}`);
     this.eventsGateway.emitStatsUpdate(id, { id, deleted: true });
   }
@@ -124,7 +114,7 @@ export class ProjectsService {
     const cachedStats = await this.redisService.get(cacheKey);
 
     if (cachedStats) {
-      return JSON.parse(cachedStats) as ProjectStats;
+      return JSON.parse(cachedStats);
     }
 
     const statsByStatus = await this.projectsRepository
@@ -134,7 +124,7 @@ export class ProjectsService {
       .addSelect('COUNT(task.id)', 'count')
       .where('project.id = :id', { id })
       .groupBy('task.status')
-      .getRawMany();
+      .getRawMany<{ status: string; count: string | number }>();
 
     const statsByAssignee = await this.projectsRepository
       .createQueryBuilder('project')
@@ -144,9 +134,9 @@ export class ProjectsService {
       .addSelect('COUNT(task.id)', 'count')
       .where('project.id = :id', { id })
       .groupBy('assignee.name')
-      .getRawMany();
+      .getRawMany<{ assignee: string | null; count: string | number }>();
 
-    const result = {
+    const result: ProjectStats = {
       statsByStatus,
       statsByAssignee,
     };
@@ -155,7 +145,7 @@ export class ProjectsService {
     return result;
   }
 
-  private async clearUserCache(userId: string) {
-    await this.redisService.delByPrefix(`${this.CACHE_PREFIX}list:${userId}`);
+  protected async clearGlobalCache() {
+    await this.redisService.delByPrefix(`${this.CACHE_PREFIX}list:global`);
   }
 }

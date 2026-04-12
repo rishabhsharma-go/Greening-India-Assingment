@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ProjectsService } from './projects.service';
-import { Project } from './entities/project.entity';
-import { User } from '../users/entities/user.entity';
+import { Project } from '../../entities/project.entity';
+import { User } from '../../../users/entities/user.entity';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { RedisService } from '../common/redis/redis.service';
-import { EventsGateway } from '../common/events/events.gateway';
+import { RedisService } from '../../../common/redis/redis.service';
+import { EventsGateway } from '../../../common/events/events.gateway';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -39,6 +39,7 @@ describe('ProjectsService', () => {
   const mockEventsGateway = {
     emitTaskUpdate: jest.fn(),
     emitStatsUpdate: jest.fn(),
+    emitProjectUpdate: jest.fn(),
   };
 
   const mockUser: User = {
@@ -81,6 +82,7 @@ describe('ProjectsService', () => {
   describe('create', () => {
     it('should successfully create a project', async () => {
       const dto = { name: 'Test Project', description: 'Test Desc' };
+      repo.findOne.mockResolvedValue(null);
       repo.save.mockResolvedValue({ id: 'uuid', ...dto, ownerId: mockUser.id });
 
       const result = await service.create(dto, mockUser);
@@ -96,7 +98,7 @@ describe('ProjectsService', () => {
       repo.findAndCount.mockResolvedValue([projects, 1]);
       mockRedisService.get.mockResolvedValue(null);
 
-      const result = await service.findAll(mockUser, 1, 10);
+      const result = await service.findAll(1, 10);
 
       expect(result.data).toEqual(projects);
       expect(result.meta.total).toEqual(1);
@@ -109,7 +111,7 @@ describe('ProjectsService', () => {
       };
       mockRedisService.get.mockResolvedValue(JSON.stringify(cached));
 
-      const result = await service.findAll(mockUser);
+      const result = await service.findAll();
       expect(result).toEqual(cached);
       expect(repo.findAndCount).not.toHaveBeenCalled();
     });
@@ -165,7 +167,6 @@ describe('ProjectsService', () => {
 
   describe('getStats', () => {
     it('should return project stats', async () => {
-      repo.findOne.mockResolvedValue({ id: '1' });
       mockRedisService.get.mockResolvedValue(null);
       mockQueryBuilder.getRawMany.mockResolvedValueOnce([
         { status: 'done', count: 1 },
