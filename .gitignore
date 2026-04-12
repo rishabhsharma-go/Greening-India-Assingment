@@ -1,0 +1,25 @@
+# Environment files
+.env
+
+# Node modules
+frontend/node_modules
+
+# Build outputs
+frontend/dist
+backend/bin
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Go
+*.exe
+*.test
+*.out
