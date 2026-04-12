@@ -235,12 +235,109 @@
 								"description": "Retrieves the real-time ecological vitality metrics for a specific project node."
 							},
 							"response": []
+						},
+						{
+							"name": "Recalibrate Project",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Restoration Omega\",\n    \"description\": \"Final quadrant planting cycle.\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/projects/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Updates project metadata. Restricted to the absolute Project Owner (Architect bypass enabled)."
+							},
+							"response": []
+						},
+						{
+							"name": "Deconstruct Project",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Permanent erasure of the project node and all associated task dependencies. Owner-locked."
+							},
+							"response": []
 						}
 					]
 				},
 				{
 					"name": "Tasks",
 					"item": [
+						{
+							"name": "Lattice Tasks Discovery",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/projects/:projectId/tasks?status=in_progress&assignee=USER-UUID",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"projects",
+										":projectId",
+										"tasks"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "in_progress",
+											"description": "Filter by enum: todo | in_progress | done"
+										},
+										{
+											"key": "assignee",
+											"value": "USER-UUID",
+											"description": "Filter by User UUID"
+										}
+									],
+									"variable": [
+										{
+											"key": "projectId",
+											"value": "PROJECT-UUID-HERE"
+										}
+									]
+								},
+								"description": "Retrieves the task lattice for a project. Supports multi-dimensional filtering by status and assignee."
+							},
+							"response": []
+						},
 						{
 							"name": "Create Task Bud",
 							"request": {
@@ -306,6 +403,31 @@
 									]
 								},
 								"description": "Requires explicit ownership (Creator/Project Owner/Assignee) or Administrative bypass."
+							},
+							"response": []
+						},
+						{
+							"name": "Deconstruct Task",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/tasks/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "TASK-UUID-HERE"
+										}
+									]
+								},
+								"description": "Removes a specific task node. Restricted to task creator or project architect."
 							},
 							"response": []
 						}

@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsEnum,
   IsDateString,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SWAGGER_EXAMPLES, SWAGGER_MESSAGES } from '../../common/constants/swagger.constants';
@@ -57,6 +58,6 @@ export class CreateTaskDto {
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   assigneeId?: string;
 }
