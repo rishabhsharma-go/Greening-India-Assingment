@@ -10,7 +10,7 @@ describe('Entity Instantiation', () => {
     user.id = 'uuid';
     user.email = 'test@example.com';
     user.name = 'Test User';
-    user.role = { id: 'r1', slug: UserRole.USER } as any;
+    user.role = { id: 'r1', slug: UserRole.USER } as unknown as Role;
     expect(user.id).toBe('uuid');
     expect(user.email).toBe('test@example.com');
   });
@@ -35,7 +35,7 @@ describe('Entity Instantiation', () => {
   describe('Role Entity', () => {
     it('should lowercase slug before insert/update', () => {
       const role = new Role();
-      role.slug = 'ADMIN' as any;
+      role.slug = 'ADMIN' as unknown as UserRole;
       role.toLowerCaseSlug();
       expect(role.slug).toBe('admin');
     });

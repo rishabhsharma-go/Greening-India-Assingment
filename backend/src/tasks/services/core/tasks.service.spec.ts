@@ -1,16 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Task, TaskStatus } from '../../entities/task.entity';
+import { Task } from '../../entities/task.entity';
 import { ProjectsService } from '../../../projects/services/core/projects.service';
 import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
-import { TASK_MESSAGES } from '../../constants/task-messages';
 import { RedisService } from '../../../common/redis/redis.service';
 import { CreateTaskDto } from '../../dto/create-task.dto';
 import { User } from '../../../users/entities/user.entity';
 import { Project } from '../../../projects/entities/project.entity';
 import { EventsGateway } from '../../../common/events/events.gateway';
-import { forwardRef } from '@nestjs/common';
+import { ProjectStats } from '../../../projects/interfaces/project-stats.interface';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -64,6 +63,10 @@ describe('TasksService', () => {
           useValue: mockTaskRepo,
         },
         {
+          provide: getRepositoryToken(User),
+          useValue: { findOne: jest.fn() },
+        },
+        {
           provide: ProjectsService,
           useValue: projectsService,
         },
@@ -106,7 +109,7 @@ describe('TasksService', () => {
 
     it('should throw ConflictException if task title exists in project', async () => {
       repo.findOne.mockResolvedValue({ id: 'existing' });
-      await expect(service.create('p1', { title: 'T' } as any, mockUser)).rejects.toThrow(ConflictException);
+      await expect(service.create('p1', { title: 'T' } as unknown as CreateTaskDto, mockUser)).rejects.toThrow(ConflictException);
     });
   });
 
@@ -152,7 +155,7 @@ describe('TasksService', () => {
       repo.findOne.mockResolvedValue(task);
       (projectsService.findOne as jest.Mock).mockResolvedValue(project);
       repo.save.mockResolvedValue({ ...task, title: 'New' });
-      (projectsService.getStats as jest.Mock).mockResolvedValue({} as any);
+      (projectsService.getStats as jest.Mock).mockResolvedValue({} as unknown as ProjectStats);
 
       const result = await service.update('1', { title: 'New' }, mockUser);
       expect(result.title).toBe('New');
@@ -165,7 +168,7 @@ describe('TasksService', () => {
       const project = { id: 'p1', ownerId: 'other' } as Project;
       repo.findOne.mockResolvedValue(task);
       (projectsService.findOne as jest.Mock).mockResolvedValue(project);
-      (projectsService.getStats as jest.Mock).mockResolvedValue({} as any);
+      (projectsService.getStats as jest.Mock).mockResolvedValue({} as unknown as ProjectStats);
 
       await service.remove('1', mockUser);
       expect(repo.softDelete).toHaveBeenCalledWith('1');

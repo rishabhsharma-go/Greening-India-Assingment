@@ -27,7 +27,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { message: (exception as Error).message || 'Internal server error' };
 
-    if ((exception as any)?.code === '23505') {
+    if ((exception as Record<string, unknown>)?.code === '23505') {
       status = HttpStatus.BAD_REQUEST;
       message = {
         error: 'Bad Request',

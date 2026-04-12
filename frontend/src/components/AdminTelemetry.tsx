@@ -33,7 +33,7 @@ export const AdminTelemetry = ({ isOpen, onOpenChange }: AdminTelemetryProps) =>
     }
   };
 
-  const actualStats = (stats as any)?.data ? (stats as any).data : stats;
+  const actualStats = stats;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -67,7 +67,7 @@ export const AdminTelemetry = ({ isOpen, onOpenChange }: AdminTelemetryProps) =>
                 <h3 className="text-slate-400 font-black text-xs uppercase tracking-[0.2em] border-b border-white/10 pb-2">Global Pulse State (All Nodes)</h3>
                 <div className="grid grid-cols-3 gap-4">
                   {['todo', 'in_progress', 'done'].map((statusKey) => {
-                    const stat = actualStats?.statsByStatus?.find((s: any) => s.status === statusKey);
+                    const stat = actualStats?.statsByStatus?.find((s) => s.status === statusKey);
                     const count = stat ? Number(stat.count) : 0;
                     const visuals = getStatusVisuals(statusKey);
                     
@@ -88,9 +88,9 @@ export const AdminTelemetry = ({ isOpen, onOpenChange }: AdminTelemetryProps) =>
               <div className="space-y-4">
                 <h3 className="text-slate-400 font-black text-xs uppercase tracking-[0.2em] border-b border-white/10 pb-2">Guardian Workload Metrics</h3>
                 <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
-                  {actualStats?.statsByAssignee?.length > 0 ? (
+                  {actualStats?.statsByAssignee && actualStats.statsByAssignee.length > 0 ? (
                     <div className="space-y-4">
-                      {actualStats.statsByAssignee.map((assigneeStat: any, idx: number) => (
+                      {actualStats.statsByAssignee.map((assigneeStat, idx: number) => (
                         <div key={idx} className="flex items-center justify-between group">
                           <div className="flex items-center gap-3">
                              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">

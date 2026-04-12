@@ -46,6 +46,10 @@ describe('TasksAdminService', () => {
           useValue: mockTaskRepository,
         },
         {
+          provide: getRepositoryToken(User),
+          useValue: { findOne: jest.fn() },
+        },
+        {
           provide: ProjectsService,
           useValue: mockProjectsService,
         },

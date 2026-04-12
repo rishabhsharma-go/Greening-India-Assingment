@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectsAdminController } from './projects-admin.controller';
 import { ProjectsAdminService } from '../../services/admin/projects-admin.service';
 import { DataSource } from 'typeorm';
+import { UpdateProjectDto } from '../../dto/update-project.dto';
 
 describe('ProjectsAdminController', () => {
   let controller: ProjectsAdminController;
@@ -41,7 +42,7 @@ describe('ProjectsAdminController', () => {
 
   it('should call service.update', async () => {
     const dto = { name: 'Admin Edit' };
-    await controller.update('p1', dto as any);
+    await controller.update('p1', dto as unknown as UpdateProjectDto);
     expect(service.update).toHaveBeenCalledWith('p1', dto);
   });
 

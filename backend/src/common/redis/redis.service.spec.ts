@@ -89,10 +89,11 @@ describe('RedisService', () => {
       const loggerSpy = jest.spyOn(
         (service as unknown as { logger: { error: jest.Mock } }).logger,
         'error',
-      );
+      ).mockImplementation();
       const error = new Error('fail');
       errorHandler(error);
       expect(loggerSpy).toHaveBeenCalledWith('Redis error', error);
+      loggerSpy.mockRestore();
     });
   });
 

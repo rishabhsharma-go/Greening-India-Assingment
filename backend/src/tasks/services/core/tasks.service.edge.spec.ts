@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from '../../entities/task.entity';
+import { User } from '../../../users/entities/user.entity';
 import { ProjectsService } from '../../../projects/services/core/projects.service';
 import { EventsGateway } from '../../../common/events/events.gateway';
 import { RedisService } from '../../../common/redis/redis.service';
@@ -47,6 +48,7 @@ describe('TasksService Edge Cases', () => {
       providers: [
         TasksService,
         { provide: getRepositoryToken(Task), useValue: mockRepo },
+        { provide: getRepositoryToken(User), useValue: { findOne: jest.fn() } },
         { provide: ProjectsService, useValue: projectsService },
         {
           provide: RedisService,

@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../users/enums/user-role.enum';
 import { User } from '../users/entities/user.entity';
+import { Role } from '../users/entities/role.entity';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 
 describe('AuthService', () => {
@@ -82,12 +83,15 @@ describe('AuthService', () => {
       const user = { 
         id: '1', 
         email: 'test@test.com', 
-        role: { slug: UserRole.USER } as any 
+        role: { slug: UserRole.USER } as unknown as Role
       };
       (jwtService.signAsync as jest.Mock).mockResolvedValue('token');
 
-      const result = await service.login(user as any);
-      expect(result).toEqual({ token: 'token', user });
+      const result = await service.login(user as unknown as User);
+      expect(result).toEqual({ 
+        token: 'token', 
+        user: { ...user, role: UserRole.USER } 
+      });
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: user.id,
         user_id: user.id,
@@ -105,8 +109,8 @@ describe('AuthService', () => {
         id: '1',
         ...dto,
         password: hashedPass,
-        role: { slug: UserRole.USER } as any,
-      } as any;
+        role: { slug: UserRole.USER } as unknown as User,
+      } as unknown as User;
 
       (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue(hashedPass);
       (usersService.create as jest.Mock).mockResolvedValue(createdUser);
@@ -120,7 +124,7 @@ describe('AuthService', () => {
           id: '1',
           name: 'Test',
           email: 'test@test.com',
-          role: { slug: UserRole.USER },
+          role: UserRole.USER,
         },
       });
       expect(bcrypt.hash).toHaveBeenCalledWith('pass', 12);
