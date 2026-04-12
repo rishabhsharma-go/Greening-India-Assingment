@@ -1,5 +1,16 @@
 # Production profile — active when SPRING_PROFILES_ACTIVE=prod
 
+spring:
+  datasource:
+    # Railway injects SPRING_DATASOURCE_URL / USERNAME / PASSWORD automatically.
+    # Internal URL (service-to-service, used when API is deployed on Railway):
+    #   jdbc:postgresql://postgres.railway.internal:5432/railway
+    # Public URL (set if running outside Railway):
+    #   jdbc:postgresql://metro.proxy.rlwy.net:12019/railway
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
 logging:
   level:
     root: WARN
