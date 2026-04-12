@@ -2,14 +2,17 @@
 
 spring:
   datasource:
-    # Railway injects SPRING_DATASOURCE_URL / USERNAME / PASSWORD automatically.
-    # Internal URL (service-to-service, used when API is deployed on Railway):
-    #   jdbc:postgresql://postgres.railway.internal:5432/railway
-    # Public URL (set if running outside Railway):
-    #   jdbc:postgresql://metro.proxy.rlwy.net:12019/railway
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    # URL resolution priority (handled by RailwayDatabaseEnvironmentPostProcessor):
+    #  1. SPRING_DATASOURCE_URL  – explicit JDBC URL override
+    #  2. DATABASE_PUBLIC_URL    – Railway public TCP-proxy (postgresql:// format, auto-converted)
+    #  3. DATABASE_URL           – Railway internal network URL (auto-converted)
+    #  4. PGHOST/PGPORT/PGDATABASE – individual Railway PG vars (auto-assembled)
+    #
+    # The YAML placeholders below act as a final fallback if the processor
+    # did not inject a value (e.g. local Docker Compose run with explicit vars).
+    url: ${spring.datasource.url:${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}}}
+    username: ${spring.datasource.username:${SPRING_DATASOURCE_USERNAME:${PGUSER:taskflow}}}
+    password: ${spring.datasource.password:${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:taskflow}}}
 
 logging:
   level:
