@@ -1,0 +1,9 @@
+# Environment
+.env
+
+# Frontend (not part of this submission)
+frontend/
+
+# OS
+.DS_Store
+Thumbs.db
