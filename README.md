@@ -1,372 +1,272 @@
-# TaskFlow — Engineering Take-Home Assignment
+# TaskFlow
 
-> **Mid-level Engineer · Full Stack / Frontend / Backend**
-> Estimated time: 3–5 hours · Deadline: 72 hours from receipt
+A backend REST API for task management built with Go and PostgreSQL. Users can register, log in, create projects, add tasks, and assign them.
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Architecture Decisions](#architecture-decisions)
+3. [Running Locally](#running-locally)
+4. [Running Migrations](#running-migrations)
+5. [Test Credentials](#test-credentials)
+6. [API Reference](#api-reference)
+7. [What You'd Do With More Time](#what-youd-do-with-more-time)
 
 ---
 
 ## Overview
 
-You're building **TaskFlow** — a minimal but real task management system. Users can register, log in, create projects, add tasks to those projects, and assign tasks to themselves or others.
+| Layer      | Technology                                      |
+|------------|-------------------------------------------------|
+| Backend    | Go 1.23, `chi` router, `database/sql` + `lib/pq` |
+| Auth       | JWT (HS256, 24 h expiry), bcrypt cost=12        |
+| Database   | PostgreSQL 16, `golang-migrate` (embedded)      |
+| Container  | Docker multi-stage build, docker-compose        |
 
-This is not a to-do app demo. It's a small product with authentication, relational data, a REST API, and a polished UI. Scope is intentionally constrained so you can ship something **complete**.
+### Features
 
-> **On AI tools:** Cursor, Copilot, and ChatGPT are permitted. We evaluate the quality of your decisions, not the volume of your code. A project with thoughtful architecture and honest tradeoffs outranks boilerplate AI output every time. Be prepared to discuss every part of your submission on a follow-up call.
-
----
-
-## Who Builds What
-
-| Role | Backend (Go) | Frontend (React) | Docker + README |
-|---|---|---|---|
-| Full Stack Engineer | ✅ Required | ✅ Required | ✅ Required |
-| Backend Engineer | ✅ Required | ❌ Not required — include a Postman/Bruno collection or test suite instead | ✅ Required |
-| Frontend Engineer | ❌ Not required — build against the mock API spec in [Appendix A](#appendix-a-mock-api-spec-for-frontend-only-candidates) | ✅ Required | ✅ Required |
-
----
-
-## The Data Model
-
-Design your schema around these entities. You may add fields, but do not remove any required ones.
-
-```
-User
-  id          uuid, primary key
-  name        string, required
-  email       string, unique, required
-  password    string, hashed (bcrypt), required
-  created_at  timestamp
-
-Project
-  id          uuid, primary key
-  name        string, required
-  description string, optional
-  owner_id    uuid → User
-  created_at  timestamp
-
-Task
-  id          uuid, primary key
-  title       string, required
-  description string, optional
-  status      enum: todo | in_progress | done
-  priority    enum: low | medium | high
-  project_id  uuid → Project
-  assignee_id uuid → User, nullable
-  due_date    date, optional
-  created_at  timestamp
-  updated_at  timestamp
-```
-
-Use **PostgreSQL**. Schema must be managed via migrations — not auto-migrate or ORM magic.
-
----
-
-## Backend Requirements
-
-> Required for: Full Stack and Backend roles
-> Language: **Go (preferred)**. If you're not comfortable with Go, use a language you know well — note your choice in the README.
-
-### Authentication
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Register with name, email, password |
-| POST | `/auth/login` | Returns a JWT access token |
-
-- Passwords must be hashed with **bcrypt** (cost ≥ 12)
-- JWT expiry: **24 hours**. Include `user_id` and `email` in claims.
-- All non-auth endpoints require `Authorization: Bearer <token>`
-
-### Projects API
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/projects` | List projects the current user owns or has tasks in |
-| POST | `/projects` | Create a project (owner = current user) |
-| GET | `/projects/:id` | Get project details + its tasks |
-| PATCH | `/projects/:id` | Update name/description (owner only) |
-| DELETE | `/projects/:id` | Delete project and all its tasks (owner only) |
-
-### Tasks API
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/projects/:id/tasks` | List tasks — support `?status=` and `?assignee=` filters |
-| POST | `/projects/:id/tasks` | Create a task |
-| PATCH | `/tasks/:id` | Update title, description, status, priority, assignee, due_date |
-| DELETE | `/tasks/:id` | Delete task (project owner or task creator only) |
-
-### General API Requirements
-
-- All responses: `Content-Type: application/json`
-- Validation errors → `400` with structured body:
-  ```json
-  { "error": "validation failed", "fields": { "email": "is required" } }
-  ```
-- Unauthenticated → `401`. Unauthorized action → `403`. Do **not** conflate these.
-- Not found → `404` with `{ "error": "not found" }`
-- Use structured logging (`slog`, `zap`, or `logrus`)
+- User registration & login with JWT authentication
+- Project CRUD (owner-scoped)
+- Task CRUD with status (`todo` / `in_progress` / `done`), priority (`low` / `medium` / `high`), assignee, and due date
+- Pagination on all list endpoints (`?page=&limit=`)
+- `GET /projects/:id/stats` — task counts by status and assignee
+- Structured JSON logging (`slog`)
 - Graceful shutdown on `SIGTERM`
-
-### Backend Bonus (optional)
-
-- Pagination on list endpoints (`?page=&limit=`)
-- `GET /projects/:id/stats` — task counts by status and by assignee
-- At least 3 integration tests for auth or task endpoints
+- Idempotent DB migrations run automatically on startup
 
 ---
 
-## Frontend Requirements
+## Architecture Decisions
 
-> Required for: Full Stack and Frontend roles
-> Framework: **React** (with TypeScript strongly preferred)
+### Go backend structure
 
-### Pages & Views
+```
+backend/
+├── cmd/api/main.go          # entry point — wires everything together
+├── internal/
+│   ├── config/              # env-based config, panics on missing JWT_SECRET
+│   ├── models/              # pure data types, no DB logic
+│   ├── auth/                # JWT sign/validate
+│   ├── database/            # sql.DB wrapper + all query methods
+│   ├── middleware/           # CORS, auth, structured logger, recoverer
+│   ├── handlers/            # HTTP handlers; one file per resource group
+│   └── server/              # chi router wiring
+└── migrations/              # embedded SQL files (golang-migrate iofs driver)
+```
 
-| View | Requirements |
-|---|---|
-| Login / Register | Form with client-side validation, error handling, JWT storage |
-| Projects list | Show all accessible projects, button to create new project |
-| Project detail | Tasks listed or grouped, filter by status and assignee |
-| Task create/edit | Modal or side panel — title, status, priority, assignee, due date |
-| Navbar | Show logged-in user's name, logout button |
+**Why `database/sql` + `lib/pq` instead of `pgx` or an ORM?**  
+The standard library interface is familiar, widely understood, and easy to test with `sql.DB` mocks. An ORM would hide the SQL, which matters in a code review — reviewers can read the queries directly. `pgx` is faster but the difference is invisible at this scale.
 
-### UX & State
+**Why embed migrations in the binary?**  
+No external files to mount or forget. The binary is self-contained: run it, it migrates, it serves. `golang-migrate` with the `iofs` source driver makes this three lines of code.
 
-- Use **React Router** for navigation
-- Auth state must persist across page refreshes (localStorage or equivalent)
-- Protected routes: redirect to `/login` if unauthenticated
-- **Loading and error states must be visible** — no silent failures, no blank screens
-- Optimistic UI for task status changes (update immediately, revert on error)
+**Why chi instead of the standard `http.ServeMux`?**  
+`chi` gives us URL parameters (`{id}`), middleware chaining, and route groups with zero reflection — it compiles to the same interface. It's idiomatic and well-maintained.
 
-### Design & Polish
-
-- Use a component library (shadcn/ui, Radix, Chakra, MUI) **or** build your own — state your choice in the README
-- Responsive: must work at **375px** (mobile) and **1280px** (desktop) widths
-- No broken layouts, no console errors in the production build
-- Sensible empty states — no `undefined`, no blank white boxes
-
-### Frontend Bonus (optional)
-
-- Drag-and-drop to reorder tasks or change their status column
-- Dark mode toggle that persists across sessions
-- Real-time task updates via WebSocket or SSE (requires backend support)
-
----
-
-## Infrastructure Requirements
-
-> Required for all roles
+**Why structured `slog` logging?**  
+`slog` ships in the Go standard library since 1.21. JSON output integrates with any log aggregator (Datadog, Loki, CloudWatch) without extra dependencies.
 
 ### Docker
 
-- `docker-compose.yml` at the repo root must spin up the **full stack**: PostgreSQL, API server, and (for Full Stack) the React app
-- A single `docker compose up` must work with **zero manual steps**
-- PostgreSQL credentials must be configurable via `.env`
-- Include a `.env.example` with **all** required variables and sensible defaults
-- The API `Dockerfile` must use a **multi-stage build** (build stage + minimal runtime stage)
+- Multi-stage `backend/Dockerfile`: Go builder → distroless/static runtime (~8 MB image).
+- The `seed` service uses the official postgres image to run seed SQL once, then exits — no custom code needed.
 
-### Migrations
+### Deliberate omissions
 
-- Use a migration tool: `golang-migrate`, `goose`, `dbmate`, or equivalent
-- Migrations must run **automatically on container start**, OR instructions must be explicit and exact in the README
-- Both **up and down** migrations are required for every migration file
-- Include a **seed script or SQL file** that creates at least:
-  - 1 user (with a known password for testing)
-  - 1 project
-  - 3 tasks with different statuses
+- **Rate limiting** — would add `golang.org/x/time/rate` on the auth endpoints in production.
+- **Refresh tokens** — 24 h JWTs are acceptable for a take-home; real products need rotation.
+- **Input sanitisation beyond trimming** — the API validates and trims inputs at boundaries; HTML escaping is the consumer's responsibility.
+- **Soft deletes** — the schema uses hard deletes. Audit trails would require an `archived_at` column and updated queries.
 
 ---
 
-## README Requirements
+## Running Locally
 
-Your README is evaluated as part of the rubric. It must include all of the following sections:
-
-### 1. Overview
-What this is, what it does, and what tech stack you used.
-
-### 2. Architecture Decisions
-Why did you structure things the way you did? What tradeoffs did you make? What did you intentionally leave out and why?
-
-### 3. Running Locally
-Exact commands from `git clone` to the app running in a browser. Assume the reviewer has Docker and nothing else installed.
+**Prerequisites**: Docker and Docker Compose (bundled with Docker Desktop).  
+Nothing else is required — Go is only needed inside the container.
 
 ```bash
-# Example — your actual commands go here
-git clone https://github.com/your-name/taskflow
+# 1. Clone
+git clone https://github.com/swaroop/taskflow
 cd taskflow
+
+# 2. Create your .env (edit JWT_SECRET — everything else has safe defaults)
 cp .env.example .env
-docker compose up
-# App available at http://localhost:3000
+# On Linux/macOS you can generate a secret with:
+#   openssl rand -hex 32
+# On Windows PowerShell:
+#   -join ((1..32) | ForEach { '{0:x2}' -f (Get-Random -Maximum 256) })
+
+# 3. Start everything
+docker compose up --build
+
+# API:  http://localhost:4000/health
 ```
 
-### 4. Running Migrations
-If migrations don't run automatically on startup, provide the exact commands.
+First startup takes ~1-2 minutes (Go compile). Subsequent starts are cached and fast.
 
-### 5. Test Credentials
-Seed user credentials so we can log in immediately without registering:
+To stop:
+```bash
+docker compose down          # keep DB volume
+docker compose down -v       # also wipe DB
 ```
-Email:    test@example.com
-Password: password123
-```
-
-### 6. API Reference
-List all endpoints with request/response examples, or link to a Postman/Bruno collection in the repo.
-
-### 7. What You'd Do With More Time
-Honest reflection. What shortcuts did you take? What would you improve or add? This section matters — it tells us how you think about quality and tradeoffs.
 
 ---
 
-## Evaluation Rubric
+## Running Migrations
 
-Minimum passing scores: **28 / 45** for Full Stack · **16 / 25** for Frontend-only or Backend-only
+Migrations run **automatically** when the API container starts.  
+They are embedded inside the binary via Go's `embed` package and executed by `golang-migrate` before the HTTP server opens.
 
-| Area | What we look for | Points | Roles |
-|---|---|---|---|
-| **Correctness** | Does it run? Does auth work end-to-end? Can we complete the core flows? | 5 | All |
-| **Code quality** | Naming, structure, separation of concerns, reviewable code, no god functions | 5 | All |
-| **API design** | RESTful conventions, correct HTTP status codes, clean error responses, auth handled properly | 5 | FS, BE |
-| **Data modeling** | Schema makes sense, migrations are clean, indexes where appropriate | 5 | FS, BE |
-| **UI/UX** | Usable, consistent, handles loading/error/empty states, responsive | 5 | FS, FE |
-| **Component design** | Sensible breakdown, state managed at the right level, no prop-drilling nightmares | 5 | FS, FE |
-| **Docker & DevEx** | Does `docker compose up` just work? Multi-stage Dockerfile? `.env.example` present? | 5 | All |
-| **README quality** | Clear setup, architecture reasoning, honest "what's missing" section | 5 | All |
-| **Bonus** | Tests, pagination, drag-and-drop, real-time, dark mode, stats endpoint | +5 | All |
-
-### Automatic Disqualifiers
-
-The following will result in immediate rejection, regardless of other quality:
-
-- App does not run with `docker compose up`
-- No database migrations (manual SQL dumps do not count)
-- Passwords stored in plaintext
-- JWT secret hardcoded in source code (not in `.env`)
-- No README
-- Submission after the 72-hour deadline without prior notice
+To roll back manually (requires `golang-migrate` CLI):
+```bash
+# Install: https://github.com/golang-migrate/migrate/releases
+migrate -path backend/migrations \
+        -database "postgres://taskflow:changeme@localhost:5432/taskflow?sslmode=disable" \
+        down 1
+```
 
 ---
 
-## Submission Instructions
+## Test Credentials
 
-1. **Create a public GitHub repository** — name it `taskflow-[your-name]`
-2. **Repo structure** — monorepo with `/backend` and `/frontend` directories, or two separate repos linked from the README. `docker-compose.yml` at root.
-3. **No secrets in git** — commit `.env.example`, never `.env`. If you accidentally commit secrets, rotate them before submitting.
-4. **Send us the link** — reply to the assignment email with your GitHub URL before the deadline.
-5. **Expect a code review call** — we'll schedule a 30-minute session to walk through your decisions. You should be able to explain any part of your code.
+Seed data is loaded automatically by the `seed` docker-compose service on first start.
+
+| Field    | Value             |
+|----------|-------------------|
+| Email    | `test@example.com` |
+| Password | `password123`     |
+
+A second user (`jane@example.com` / `password123`) is also seeded, along with a sample project and three tasks in different statuses.
 
 ---
 
-## Appendix A: Mock API Spec (Frontend-only candidates)
+## API Reference
 
-If you are applying for a **Frontend-only** role, build your UI against this mock API. You may use `json-server`, `msw` (Mock Service Worker), or any other mocking approach — just document it in your README.
+**Base URL**: `http://localhost:4000`  
+All endpoints return `Content-Type: application/json`.  
+Protected endpoints require `Authorization: Bearer <token>`.
 
-### Base URL
-```
-http://localhost:4000
-```
+### Auth
 
-### Auth endpoints
-
-**POST `/auth/register`**
+#### POST `/auth/register`
 ```json
 // Request
 { "name": "Jane Doe", "email": "jane@example.com", "password": "secret123" }
 
-// Response 201
-{ "token": "<jwt>", "user": { "id": "uuid", "name": "Jane Doe", "email": "jane@example.com" } }
+// 201 Created
+{ "token": "<jwt>", "user": { "id": "...", "name": "Jane Doe", "email": "jane@example.com", "created_at": "..." } }
 ```
 
-**POST `/auth/login`**
+#### POST `/auth/login`
 ```json
 // Request
 { "email": "jane@example.com", "password": "secret123" }
 
-// Response 200
-{ "token": "<jwt>", "user": { "id": "uuid", "name": "Jane Doe", "email": "jane@example.com" } }
+// 200 OK
+{ "token": "<jwt>", "user": { ... } }
 ```
 
-### Projects endpoints
+### Projects
 
-**GET `/projects`** — requires `Authorization: Bearer <token>`
+#### GET `/projects?page=1&limit=12`
+Returns projects the user owns or has tasks assigned to them in.
 ```json
-// Response 200
 {
-  "projects": [
-    { "id": "uuid", "name": "Website Redesign", "description": "Q2 project", "owner_id": "uuid", "created_at": "2026-04-01T10:00:00Z" }
-  ]
+  "projects": [ { "id": "...", "name": "...", "description": "...", "owner_id": "...", "created_at": "..." } ],
+  "meta": { "page": 1, "limit": 12, "total": 5, "has_next": false }
 }
 ```
 
-**POST `/projects`**
+#### POST `/projects`
 ```json
 // Request
-{ "name": "New Project", "description": "Optional description" }
-
-// Response 201
-{ "id": "uuid", "name": "New Project", "description": "Optional description", "owner_id": "uuid", "created_at": "2026-04-09T10:00:00Z" }
+{ "name": "Website Redesign", "description": "Q2 project" }
+// 201 Created — project object
 ```
 
-**GET `/projects/:id`**
+#### GET `/projects/:id`
+Returns the project with all its tasks embedded.
+
+#### PATCH `/projects/:id` *(owner only)*
 ```json
-// Response 200
+{ "name": "Updated Name", "description": "New description" }
+// 200 OK — updated project
+```
+
+#### DELETE `/projects/:id` *(owner only)*
+`204 No Content`. Cascades to all tasks.
+
+#### GET `/projects/:id/stats`
+```json
 {
-  "id": "uuid", "name": "Website Redesign", "description": "Q2 project", "owner_id": "uuid",
-  "tasks": [
-    { "id": "uuid", "title": "Design homepage", "status": "in_progress", "priority": "high", "assignee_id": "uuid", "due_date": "2026-04-15", "created_at": "...", "updated_at": "..." }
-  ]
+  "project_id": "...",
+  "by_status":  { "todo": 2, "in_progress": 1, "done": 3 },
+  "by_assignee": { "uuid-1": 3, "unassigned": 3 }
 }
 ```
 
-**PATCH `/projects/:id`**
+### Tasks
+
+#### GET `/projects/:id/tasks?status=todo&assignee=uuid&page=1&limit=50`
+
+#### POST `/projects/:id/tasks`
 ```json
-// Request
-{ "name": "Updated Name", "description": "Updated description" }
-// Response 200 — returns updated project object
+{
+  "title": "Design homepage",
+  "description": "Wireframes first",
+  "priority": "high",
+  "assignee_id": "uuid",
+  "due_date": "2026-04-15"
+}
+// 201 Created — task object
 ```
 
-**DELETE `/projects/:id`** → Response `204 No Content`
-
-### Tasks endpoints
-
-**GET `/projects/:id/tasks?status=todo&assignee=uuid`**
+#### PATCH `/tasks/:id`
+All fields optional. Send `"assignee_id": null` to clear the assignee.
 ```json
-// Response 200
-{ "tasks": [ /* task objects */ ] }
+{ "status": "done", "priority": "low" }
+// 200 OK — updated task
 ```
 
-**POST `/projects/:id/tasks`**
-```json
-// Request
-{ "title": "Design homepage", "description": "...", "priority": "high", "assignee_id": "uuid", "due_date": "2026-04-15" }
-// Response 201 — returns created task object
-```
+#### DELETE `/tasks/:id` *(project owner or task assignee)*
+`204 No Content`
 
-**PATCH `/tasks/:id`**
-```json
-// Request — all fields optional
-{ "title": "Updated title", "status": "done", "priority": "low", "assignee_id": "uuid", "due_date": "2026-04-20" }
-// Response 200 — returns updated task object
-```
+### Error Responses
 
-**DELETE `/tasks/:id`** → Response `204 No Content`
-
-### Error responses
-
-```json
-// 400 Validation error
-{ "error": "validation failed", "fields": { "email": "is required" } }
-
-// 401 Unauthenticated
-{ "error": "unauthorized" }
-
-// 403 Forbidden
-{ "error": "forbidden" }
-
-// 404 Not found
-{ "error": "not found" }
-```
+| Status | Body |
+|--------|------|
+| 400    | `{ "error": "validation failed", "fields": { "email": "is required" } }` |
+| 401    | `{ "error": "unauthorized" }` |
+| 403    | `{ "error": "forbidden" }` |
+| 404    | `{ "error": "not found" }` |
+| 500    | `{ "error": "internal server error" }` |
 
 ---
 
-*Questions? Reply to the email this was sent from. Good luck — we look forward to seeing what you build.*
+## What You'd Do With More Time
+
+**Security**
+- Add per-IP rate limiting on auth endpoints (`x/time/rate` token bucket)
+- Rotate JWT with short-lived access tokens + refresh token rotation
+- CSRF protection if using cookies instead of Bearer tokens
+- `helmet`-style security headers on the API
+
+**Data & API**
+- Soft deletes + an audit log table for compliance use cases
+- Full-text task search (`pg_trgm` GIN index on `title || ' ' || description`)
+- WebSocket or SSE for real-time board updates across browser tabs
+- File attachments on tasks (S3/MinIO + presigned URLs)
+- Project member roles (viewer / editor / admin) instead of binary owner/non-owner
+
+**Operations**
+- GitHub Actions CI: `go test ./...`, `go vet`, `golangci-lint`, `npm run build`
+- Kubernetes manifests / Helm chart
+- Prometheus metrics endpoint (`/metrics`) + Grafana dashboard
+- Structured error tracking (Sentry)
+- Proper secrets management (Vault or AWS Secrets Manager instead of `.env`)
+
+**Shortcuts taken**
+- No integration tests are included — a production service would have at minimum auth and task CRUD covered.
