@@ -1,0 +1,32 @@
+# ── Build stage ───────────────────────────────────────────────────────────────
+FROM rust:latest AS builder
+
+RUN apt-get update && apt-get install -y \
+    pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy full workspace so cargo can resolve all members
+COPY Cargo.toml Cargo.lock* ./
+COPY services/gateway/    services/gateway/
+COPY services/management/ services/management/
+COPY services/geospatial/ services/geospatial/
+COPY services/telemetry/  services/telemetry/
+COPY services/carbon/     services/carbon/
+# Migrations are embedded by sqlx::migrate!("../../migrations") at compile time
+COPY migrations/ migrations/
+
+RUN cargo build --release -p gateway
+
+# ── Runtime stage ─────────────────────────────────────────────────────────────
+FROM debian:trixie-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/gateway /usr/local/bin/gateway
+
+EXPOSE 8000
+CMD ["gateway"]
