@@ -1,0 +1,75 @@
+# version: "3.9"
+
+# services:
+#   postgres:
+#     image: postgres:16-alpine
+#     container_name: taskflow-db
+#     environment:
+#       POSTGRES_USER: ${DB_USER:-postgres}
+#       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+#       POSTGRES_DB: ${DB_NAME:-taskflow}
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#       - ./Backend/migrations/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+#       interval: 5s
+#       timeout: 5s
+#       retries: 5
+
+#   backend:
+#     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+#     container_name: taskflow-api
+#     env_file:
+#       - .env
+#     ports:
+#       - "8080:8080"
+#     depends_on:
+#       postgres:
+#         condition: service_healthy
+#     restart: on-failure
+
+# volumes:
+#   postgres_data:
+
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taskflow-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-taskflow}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: taskflow-api
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  postgres_data:

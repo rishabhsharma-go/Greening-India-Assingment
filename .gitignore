@@ -1,0 +1,38 @@
+# Environment variables — never commit these
+.env
+
+# Go build output
+Backend/api
+Backend/*.exe
+Backend/*.out
+Backend/tmp/
+
+# Go test cache
+*.test
+*.prof
+
+# Go module download cache
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+
+# Docker volumes
+postgres_data/
+
+# Node modules (for when frontend is added)
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini
