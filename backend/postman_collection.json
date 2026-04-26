@@ -1,0 +1,403 @@
+{
+  "info": {
+    "name": "TaskFlow API",
+    "description": "REST API collection for the TaskFlow task management service.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Verify the server is running."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"status\":\"ok\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('token', body.token);",
+                  "  console.log('Token saved:', body.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Smith\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "description": "Register a new user. Returns a JWT token and user object."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"token\": \"<jwt>\",\n  \"user\": {\n    \"id\": \"<uuid>\",\n    \"name\": \"Alice Smith\",\n    \"email\": \"alice@example.com\",\n    \"created_at\": \"2024-01-01T00:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "400 Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"validation failed\",\n  \"fields\": {\n    \"email\": \"must be a valid email\",\n    \"password\": \"must be at least 8 characters\"\n  }\n}"
+            },
+            {
+              "name": "400 Email Taken",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"error\": \"email already in use\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('token', body.token);",
+                  "  console.log('Token saved:', body.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "description": "Login with email and password. Saves token to collection variable automatically."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"token\": \"<jwt>\",\n  \"user\": {\n    \"id\": \"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\",\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"created_at\": \"2024-01-01T00:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "401 Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"error\": \"invalid email or password\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["projects"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "List all projects accessible to the authenticated user (owner or task assignee). Supports pagination."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"projects\": [\n    {\n      \"id\": \"<uuid>\",\n      \"name\": \"Demo Project\",\n      \"description\": \"A seed project for testing\",\n      \"owner_id\": \"<uuid>\",\n      \"created_at\": \"2024-01-01T00:00:00Z\"\n    }\n  ],\n  \"total_count\": 1,\n  \"page\": 1,\n  \"page_size\": 20,\n  \"total_pages\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/projects",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My New Project\",\n  \"description\": \"Optional project description\"\n}"
+            },
+            "description": "Create a new project. The authenticated user becomes the owner."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"<uuid>\",\n  \"name\": \"My New Project\",\n  \"description\": \"Optional project description\",\n  \"owner_id\": \"<uuid>\",\n  \"created_at\": \"2024-01-01T00:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/projects/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+            "description": "Get project details including all tasks. Requires owner or assignee access."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22\",\n  \"name\": \"Demo Project\",\n  \"description\": \"A seed project for testing\",\n  \"owner_id\": \"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\",\n  \"created_at\": \"2024-01-01T00:00:00Z\",\n  \"tasks\": []\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"error\": \"project not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/projects/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Project Name\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "description": "Update project name/description. Owner only."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"<uuid>\",\n  \"name\": \"Updated Project Name\",\n  \"owner_id\": \"<uuid>\",\n  \"created_at\": \"2024-01-01T00:00:00Z\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"error\": \"forbidden\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/projects/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+            "description": "Delete a project and all its tasks (CASCADE). Owner only."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Get Project Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/projects/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22/stats",
+            "description": "Get task counts broken down by status and assignee for a project."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"by_status\": {\n    \"todo\": 1,\n    \"in_progress\": 1,\n    \"done\": 1\n  },\n  \"by_assignee\": {}\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22/tasks?status=todo&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22", "tasks"],
+              "query": [
+                { "key": "status", "value": "todo", "description": "Filter by status: todo | in_progress | done" },
+                { "key": "assignee_id", "value": "", "disabled": true, "description": "Filter by assignee UUID" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "List tasks for a project with optional status and assignee_id filters."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"tasks\": [\n    {\n      \"id\": \"<uuid>\",\n      \"title\": \"First task\",\n      \"status\": \"todo\",\n      \"priority\": \"low\",\n      \"project_id\": \"<uuid>\",\n      \"created_at\": \"2024-01-01T00:00:00Z\",\n      \"updated_at\": \"2024-01-01T00:00:00Z\"\n    }\n  ],\n  \"total_count\": 1,\n  \"page\": 1,\n  \"page_size\": 20,\n  \"total_pages\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/projects/b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Task\",\n  \"description\": \"Task description\",\n  \"status\": \"todo\",\n  \"priority\": \"high\",\n  \"due_date\": \"2025-12-31\"\n}"
+            },
+            "description": "Create a task in a project. Project owner only. Status defaults to 'todo', priority to 'medium'."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"<uuid>\",\n  \"title\": \"New Task\",\n  \"description\": \"Task description\",\n  \"status\": \"todo\",\n  \"priority\": \"high\",\n  \"project_id\": \"<uuid>\",\n  \"due_date\": \"2025-12-31\",\n  \"created_at\": \"2024-01-01T00:00:00Z\",\n  \"updated_at\": \"2024-01-01T00:00:00Z\"\n}"
+            },
+            {
+              "name": "403 Forbidden (non-owner)",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"error\": \"forbidden\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/tasks/c1eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"priority\": \"medium\"\n}"
+            },
+            "description": "Partial update of a task. Project owner or task assignee only. All fields optional."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"<uuid>\",\n  \"title\": \"First task\",\n  \"status\": \"in_progress\",\n  \"priority\": \"medium\",\n  \"project_id\": \"<uuid>\",\n  \"created_at\": \"2024-01-01T00:00:00Z\",\n  \"updated_at\": \"2024-01-01T00:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/tasks/c1eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+            "description": "Delete a task. Project owner only."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"error\": \"forbidden\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
